@@ -1,7 +1,10 @@
 # Rozdzial 2 - Essential tools
 
-Przekierowywanie ​ **>** ​ to po prostu pcha calosc do pliku. ​ **>>** ​ appenduje. Redirecty moga tez byc laczone i sa wtedy ewaluowane od lewej do prawej.
-SORT < JAKIS PLIK > DRUGI_PLIK_NA_OUTPUT  
+Przekierowywanie ​ **>** ​ to po prostu pcha calosc do pliku. ​ **>>** ​ appenduje.  
+
+Redirecty moga tez byc laczone i sa wtedy ewaluowane od lewej do prawej.  
+
+SORT < JAKIS PLIK > DRUGI_PLIK_NA_OUTPUT   
 
 To sie powinno czytac tak:  
 (SORT < JAKIS PLIK) > DRUGI_PLIK_NA_OUTPUT
