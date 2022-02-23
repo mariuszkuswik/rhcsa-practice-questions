@@ -1,3 +1,6 @@
+[Resetowanie hasla roota](#resetowanie-hasla-roota-w-pizdu-wazne-masz-to-umiec-na)
+
+
 # Rozdzial 2 - Essential tools
 
 Przekierowywanie ​ **>** ​ to po prostu pcha calosc do pliku. ​ **>>** ​ appenduje.  
