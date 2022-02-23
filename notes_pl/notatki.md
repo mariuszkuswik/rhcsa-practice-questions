@@ -1,5 +1,5 @@
-[Resetowanie hasla roota w domkumencie](#resetowanie-hasla-roota-w-pizdu-wazne-masz-to-umiec-na)
-[Resetowanie hasla roota](https://linuxconfig.org/redhat-8-recover-root-password)
+[Resetowanie hasla roota w domkumencie](#resetowanie-hasla-roota-w-pizdu-wazne-masz-to-umiec-na)  
+[Resetowanie hasla roota](https://linuxconfig.org/redhat-8-recover-root-password)  
 
 # Rozdzial 2 - Essential tools
 
