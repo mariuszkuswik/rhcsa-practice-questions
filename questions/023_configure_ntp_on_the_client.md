@@ -45,6 +45,11 @@ server classroom.example.com iburst
 chronyc sources -v
 ```
 
+* Sprawdzenie czy czas jest zsynchronizowany 
+
+```
+timedatectl 
+```
 
 ### Additional comment:
 
