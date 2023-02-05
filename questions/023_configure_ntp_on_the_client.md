@@ -2,6 +2,7 @@
 
 ### Question:
 Configure Your system that it is **NTP** client of **classroom.example.com** 
+Zmień strefę czasową na dowolną
 
 ***
 (scroll down for an answer)
