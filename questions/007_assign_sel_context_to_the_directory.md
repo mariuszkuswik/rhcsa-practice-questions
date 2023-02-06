@@ -47,4 +47,4 @@ semanage fcontext -a -t user_home_dir_t "/xfs(/.*)?"
 restorecon -R /xfs
 ```
 
-* Wszystko jest pod man semanage-fcontext!
+### Wszystko jest pod man semanage-fcontext!
