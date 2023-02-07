@@ -39,6 +39,7 @@ setfacl -R -m u:davis:rwx /home/john
 * Above commands are changing existing files and folders (with ***-R*** making it recursive). However if we want to make it applicable to the 
   new files and folders there must be ***d:*** (default) prefix used.
   
+  ### Pamiętać o ```-R``` !
  ```
  setfacl -R -m d:u:davis:rwx /home/john
  ```
