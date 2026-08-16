@@ -878,7 +878,72 @@ Oprócz klasycznych uprawnień istnieją atrybuty jądra, zarządzane przez syst
 
 ######
 
+# ROZDZIAŁ 8 - SIECI
 
+W nowoczesnych systemach RHEL (8/9/10), konfiguracja sieci opiera się na usłudze **NetworkManager**. 
+
+> **UWAGA:** Komenda `ifconfig` jest przestarzała. Używamy zestawu narzędzi z rodziny `iproute2` oraz `nmcli`.
+
+## 1. Wyświetlanie danych (Narzędzia `ip`)
+Komenda `ip` jest najlepszym narzędziem do **diagnostyki** i podglądu stanu sieci. Zmiany wprowadzone za jej pomocą są **tymczasowe** i znikną po restarcie systemu.
+
+* `ip addr show` (lub `ip a`): Wyświetla szczegółową konfigurację adresów IP dla wszystkich interfejsów.
+* `ip link show`: Wyświetla stan interfejsów (up/down) oraz adresy MAC.
+* `ip -s link`: Wyświetla interfejsy wraz ze statystykami przesłanych/odebranych pakietów.
+* `ip route show`: Wyświetla tablicę routingu. 
+    * *Złota zasada:* Router (brama domyślna) musi znajdować się w tej samej podsieci co interfejs.
+
+## 2. Różnice: Interface, Connection, Link
+W NetworkManagerze (NM) te pojęcia są rozdzielone:
+* **Interface (Device):** Fizyczna lub wirtualna karta sieciowa w systemie (np. `eth0`, `enp0s3`). Widoczne w `/sys/class/net`.
+* **Connection:** Profil konfiguracyjny (ustawienia IP, DNS, brama). Jeden interfejs może mieć wiele profili (np. "Biuro" i "Dom").
+* **Link:** Warstwa fizyczna interfejsu (stan "kabla" lub "połączenia" w sensie warstwy 2 OSI).
+
+## 3. Zarządzanie konfiguracją (NetworkManager)
+Aby konfiguracja była **trwała** (przetrwała reboot), używamy `nmcli` (CLI) lub `nmtui` (TUI). Pliki w `/etc/sysconfig/network-scripts/` są historycznie istotne (używane w RHEL 7 i starszych), ale obecnie RHEL preferuje konfigurację przechowywaną wewnątrz NetworkManagera (systemowe pliki konfiguracyjne plików ifcfg są stopniowo wycofywane na rzecz plików `keyfile`).
+
+### Nmcli – zarządzanie z CLI (Wymagane na egzaminie!)
+`nmcli` jest Twoim głównym narzędziem. Nie polegaj na GUI na egzaminie, może ono nie być zainstalowane.
+
+* `nmcli device status`: Pokazuje status wszystkich kart sieciowych.
+* `nmcli connection show`: Pokazuje wszystkie zdefiniowane profile konfiguracji.
+* `nmcli connection add type ethernet con-name "NazwaProfilu" ifname "enp0s3" ip4 192.168.1.10/24 gw4 192.168.1.1`: Dodanie nowego profilu.
+* `nmcli connection up "NazwaProfilu"`: Aktywacja połączenia.
+* `nmcli connection down "NazwaProfilu"`: Deaktywacja połączenia.
+
+### Nmtui – tekstowy interfejs użytkownika
+Wygodne narzędzie tekstowe. Mimo że w środowisku serwerowym GUI jest zazwyczaj niedostępne, `nmtui` jest często preinstalowane i stanowi akceptowalną alternatywę dla `nmcli`. Pozwala łatwo zmieniać DNSy, edytować połączenia i nazwę hosta (hostname).
+
+## 4. Diagnostyka portów (`ss`)
+Komenda `ss` (Socket Statistics) zastępuje przestarzały `netstat`.
+
+* `ss -tulpn`:
+    * `-t`: TCP
+    * `-u`: UDP
+    * `-l`: Listening (tylko porty w stanie oczekiwania)
+    * `-p`: Pokaż procesy korzystające z portu
+    * `-n`: Nie zamieniaj nazw portów na numery (szybsze działanie).
+* **Interpretacja:** Jeśli port słucha na `127.0.0.1` lub `::1`, jest dostępny **tylko lokalnie**. Jeśli na `0.0.0.0` lub `:::`, słucha na wszystkich interfejsach sieciowych.
+
+## 5. Konfiguracja DNS
+DNSy konfigurujemy dla konkretnego profilu połączenia, aby NetworkManager automatycznie zarządzał plikiem `/etc/resolv.conf`. **Nigdy nie edytuj `/etc/resolv.conf` ręcznie**, ponieważ NetworkManager nadpisze te zmiany.
+
+* **Przez nmcli:**
+  ```bash
+  nmcli con mod "NazwaProfilu" ipv4.dns "8.8.8.8 8.8.4.4"
+  nmcli con up "NazwaProfilu"
+
+ * Przez nmtui: Wejdź w "Edit a connection" -> Wybierz profil -> DNS -> Edit.
+ * DHCP vs Statyczne: Jeśli karta pobiera IP z DHCP, może nadpisywać DNSy. Aby to zablokować:
+   nmcli con mod "NazwaProfilu" ipv4.ignore-auto-dns yes
+
+6. Hostname
+Najlepszą metodą na zmianę nazwy hosta jest:
+hostnamectl set-hostname "nazwa"
+
+Zmiana ta jest trwała, aktualizuje /etc/hostname i jest widoczna dla systemu natychmiastowo.
+
+############
 
 # ROZDZIAL 8 - SIECI
 
@@ -941,6 +1006,7 @@ This command searches in both ​ **/etc/hosts** ​ and DNS to resolve the host
 specified.
 Jesli chce sie zamienic kolejnosc resolvovania edytuje sie plik ​ **/ETC/NSSWITCH.CONF**
 
+#############
 
 # ROZDZIAL 9 - MANAGING PROCESSES
 
