@@ -943,70 +943,6 @@ hostnamectl set-hostname "nazwa"
 
 Zmiana ta jest trwała, aktualizuje /etc/hostname i jest widoczna dla systemu natychmiastowo.
 
-############
-
-# ROZDZIAL 8 - SIECI
-
-Kluczem do wszystkiego jest komenda ​ **IP** ​. ​NIE NALEZY UZYWAC JUZ IFCONFIG BO JEST
-PRZESTARZALE!!
-**IP ADDR SHOW** ​ (skrot ​ **IP A S** ​ lub ​ **IP A** ​) - pokazuje interfejsy sieciowe i dokladne dane
-**IP LINK SHOW** ​ - pokazuje interfejsy, ale tylko ich stan i MAC karty bez IP
-**IP -s LINK** ​ - pokazuje interfejsy oraz informacje o przeslanych pakietach
-**IP ROUTE SHOW** ​ - pokazuje routery dla konkretnych interfejsow sieciowych. ​ **ROUTER MUSI
-BYC W TEJ SAMEJ SIECI CO INTERFEJS!!!!!!!!**
-Porty moga byc otwarte lub zamkniete. Komenda ​ **SS -LT** ​ pokazuje wszystko (wczesniej byl
-**NETSTAT** ​). ​ **SS -TUL** ​ pokazuje nie tylko TCP ale i UDP.
-***** Some ports are only listening on the IPv
-loopback address 127.0.0.1 or the IPv6 loopback address ::1, which means that they
-are locally accessible only. Other ports are listening on *, which stands for all IPv
-addresses, or on :::*, which represents all ports on all IPv6 addresses *****
-Do wylistowania urzadzen w systemie mozna tez folderu - ​ **/sys/class/net**
-Do zarzadzania polaczeniami sluzy ​ **NETWORK MANAGER** ​. To jest demon co wstaje i jak
-wstaje czyta skrypty konfiguracyjne dla network interfacow ktore as zlokalizowane w
-**/ETC/SYSCONFIG/NETWORK-SCRIPTS** ​ i musza miec prefix ​ **IFCFG** ​i suffix z nazwa interfejsu.
-Jezeli sie przeedytuje ten plik to by zmiany chwycily daje sie​ **NMCLI CON RELOAD** ​.
-Cokolwiek sie nie zmieni za pomoca komendy​ **IP** ​ jest 'nonpersistent' (cokolwiek to nie znaczy w
-kontekscie sieci). By tematy byly trwale trzeba uzyc komend ​ **NMCLI** ​ lub ​ **NMTUI** ​. To pierwsze to
-oczywiscie command line, a ​ **TUI** ​to tekstowe. Oczywiscie tekstowe sie latwiej uzywa.
-**NMCLI CON SHOW** ​ - pokazuje wszystkie polaczenia i ich przypisania do urzadzen (aktywne i
-nieaktywne). Jak sie jako ostatni parametr poda nazwe to sie dostaje dodatkowe info o
-konkretnym polaczeniu.
-**NMCLI DEV STATUS** ​ by zobaczyc status urzadzen (wszystkich)
-**NMCLI DEV SHOW <devicename>** ​ lub urzadzenia podanego jako parametr
-TUTAJ JEST DODAWANIE/MODYFIKOWANIE USTAWIEN POLACZEN, ALE TO JEST
-GLUPIE WPISYWANIE KOMEND BEZ WYTLUMACZENIA. Zakladaja chyba, ze musi byc
-
-
-uzywane ​ **NMTUI** ​. Generalnie najwazniejsze to jest samo dodanie polaczenia:
-**NMCLI CON ADD CON-NAME TUTAJ_JAKAS_NAZWA OPCJE (autoconnect no ifname
-NAZWA_INTERFEJSU)
-NMCLI CON UP/DOWN/DELETE NAZWA_POLACZENIA** ​by wystartowac
-Za pomoca ​ **NMTUI** ​ da sie:
-* edytowac polaczenie (wpierw trzeba po zmianach je ​ **deaktywowac** ​i potem ​ **aktywowac
-ponownie!!! Najlepiej SYSTEMCTL RESTART NETWORK** ​)
-* zmienic nazwe hosta
-* aktywowac polaczenie
-By zmienic nazwe hosta mozna:
-* ​ **hostnamectl set-hostname nazwa_hosta** ​ (​ **HOSTNAMECTL STATUS** ​ by sprawdzic)
-* z ​ **NMTUI**
-* edytowac z palca​ **/ETC/HOSTS**
-Ustawienie DNSow: (domyslnie leza w ​ **/etc/resolv.conf** ​)
-*Use ​ **nmtui** ​to set the DNS name servers.
-* Set the ​ **DNS1** ​and ​ **DNS2** ​in the ​ **ifcfg network connection** ​ configuration file in
-**/etc/sysconfig/network-scripts** ​.
-* Use a ​ **DHCP** ​server that is configured to hand out the address of the ​ **DNS** ​name server.
-* Use ​ **nmcli con mod <connection-id> [+]ipv4.dns <ip-of-dns>**
-Notice that if your computer is configured to get the network configuration from a DHCP server,
-the DNS server is also set via the DHCP server. If you do not want this to happen, you have two
-options:
-* Edit the ​ **ifcfg configuration file** ​ to include the option ​ **PEERDNS=no** ​.
-* Use ​ **nmcli con mod <con-name> ipv4.ignore-auto-dns yes** ​.
-To verify host name resolution, you can use the ​ **GETENT HOSTS SERVERNAME** ​ command.
-This command searches in both ​ **/etc/hosts** ​ and DNS to resolve the hostname that has been
-specified.
-Jesli chce sie zamienic kolejnosc resolvovania edytuje sie plik ​ **/ETC/NSSWITCH.CONF**
-
-#############
 
 
 # ROZDZIAŁ 9 - MANAGING PROCESÓW
@@ -1090,62 +1026,6 @@ Sygnały to powiadomienia wysyłane do procesów w celu wymuszenia określonego 
 
 ###########
 
-# ROZDZIAL 9 - MANAGING PROCESSES
-
-Sa dwa typy procesow:
-* ​ **shell job** ​ - opalane kiedy uruchamiamy komende z shella i powiazane z nim. Nazywane
-rowniez INTERCTIVE PROCESS.
-* ​ **demony** ​- startujace najczesciej przy uruchomieniu systemu, najczesciej z prawami ROOTA
-Procesy uruchamiaja jeden lub wiecej THREADs.
-Jak sie uruchamia ​ **SHELL JOB** ​ i sie wie, ze troche potrwa to mozna wrzucic ​ **&** ​ za komenda (np:
-**command &** ​). To kladzie temat do backgroundu. Jak sie chce to wrzucic do foregroundu to sie
-robi komenda ​ **FG** ​. Kiedy job zajmuje duuuuuuzo czasu to mozna mu dac ​ **Ctrl+Z** ​ co pauzuje
-proces i mozna sobie cos zrobic. Jak sie chce odpauzowac to dajemy​ **BG** ​ i wtedy laduje znow w
-bazkgroundzie i sie mieli. ​ **Ctrl+C** ​ przerywa proces i usuwa go z pamieci. ​ **Ctrl+D** ​ wysyla sygnal
-EOF do procesu, ze niby on czeka na cos. Ale kurde nie wiem co to daje. Komenda, ktora
-listuje wszystkie joby, ktore sa w backgroundzie to ​ **JOBS** ​. Do ​ **FG** ​i ​ **BG** ​mozna dawac tez
-parametr, ktory jest identyfikatorem (numerem porzadkowym) procesu. ​ **JAK SIE STARTUJE
-PROCES W BACKGROUNDZIE I UBIJE SHELLA TO ONE DALEJ ZYJA. KIEDYS SIE BY
-TO OSIAGNAC STOSOWALO NOHUP** ​.
-Procesy startuja workery (​ **threads** ​). Admin nic nie moze z nimi robic - to programista to ogarnia.
-Co do procesow to istnieja dwa typy:
-* ​ **kernel processes** ​ - w​ **ps aux** ​ widac, ze ich nazwy sa w nawiasach kwadratowych. Nie da sie
-ich ubic czy zmienic priorytetu inaczej niz ubijajac maszyne.
-* ​ **real time processes** ​ - odpalane przez userow
-Do listowania procesow uzywa sie komendy ​ **PS** ​rzecz jasna:
-* ​ **bez parametrow** ​ - pokaze procesy wystartowane przez obecnego usera
-* ​ **aux** ​ - short summary of all active processes
-*​ **-ef** ​ - pokazuje info o procesach, ale tez pelna komende, ktora go wywolala
-* ​ **fax** ​ - pokazuje hierarchie procesow
-* ​ **o** ​- pozwala wyspecyfikowac nazwy kolumn ktorymi jestesmy zainteresowani
-Jak jestemy zainteresowani tylko PIDem procesow, ktore np. maja jakas nazwe to uzywamy
-**PGREP NAZWA** ​. Output to czysta lista PIDow z nowymi liniami. Parametry:
-**-l** ​pokazuje nazwe procesu obok PIDu
-**-u** ​limituje output do procesow danego usera (ostatnia flaga i trzeba podac nazwe usera)
-**-v** ​invertuje wynik (czyli pokazuje wszystko co nie spelnia warunku wyszukiwania)
-
-
-Kazdy proces startuje z domyslnym priorytetem ​ **0 (-19 to NAJWYZSZY MOZLIWY PRIORYTET
-CZYLI NAJWAZNIEJSZY!!!)** ​. Mozna to zmieniac - komendy ​ **NICE (przy starcie procesu -
-nice -LEVEL komenda)** ​i ​ **RENICE (w runtime)** ​podajac zakres od ​ **-20 do 19** ​ (punktem wyjscia
-jest ​ **20** ​jako domyslna wartosc, parametrem co sie podaje jest ​ **-n WARTOSC** ​). Niceness jest
-podawana jako kolumna ​ **NI** ​w outpucie komendy ​ **TOP** ​.
-Jednakze zwykly user moze tylko obnizac waznosc procesu czyli dodawac (im nizsza wartosc
-niceness tym proces wazniejszy).
-Sa trzy typy sygnalow, ktore dzialaja na wszystkie procesy:
-* ​ **SIGTERM (15)** ​ prosi proces o zakonczenie sie
-* ​ **SIGKILL (9)** ​ killuje process
-* ​ **SIGHUP(1)** ​ zawiesza proces co skutkuje tym, ze proces odczytuje ponownie swoja
-konfiguracje
-* ​ **SIGSTOP (19)** ​- pauzuje proces by go potem uruchomic ponownie - ​ **SIGCONT (18)** ​startuje
-tak zatrzymany proces
-* ​ **SIGSTP (20)** ​ - proces ma sie zatrzymac (odpowiednik ​ **Ctrl+Z** ​) - czyli pchniecie procesu do
-backgroundu.
-Wysyla sie sygnaly do procesow za pomoca komendy ​ **KILL** ​. ​ **KILL -l** ​ pokaze sygnaly, ktore
-mozna wykorzystac. Domyslnie ​ **KILL PID** ​ wysle ​ **SIGTERM** ​. Lepiej nie uzywac ​ **KILL -9** ​ bo
-zostawia sie pierdolnik. ​ **PKILL NAZWA** ​ SIGTERMUJe proces po nazwie. ​ **KILLALL NAZWA**
-robi to samo, ale ze wszystkimi procesami, ktore maja te nazwe.
-
 
 # ROZDZIAL 10 - Virtual machines
 
@@ -1176,7 +1056,7 @@ belonging to a specific VM
 
 ################################
 
-```markdown
+
 # ROZDZIAŁ 11 - MANAGING SOFTWARE
 
 Współczesne systemy RHEL używają `dnf` (który jest następcą i logicznym rozwinięciem `yum`). Warto pamiętać, że chociaż komendy `yum` są wciąż dostępne (jako aliasy), to pod spodem operuje silnik `dnf`.
@@ -1253,224 +1133,117 @@ Baza `rpm` jest niezależna od metadanych `dnf`.
 2. Na egzaminie GUI prawdopodobnie będzie niedostępne – opanuj do perfekcji komendy `dnf` oraz `rpm`.
 3. Podczas rozwiązywania zadań z repozytoriami, zawsze weryfikuj czy repo jest `enabled=1` i czy ścieżka w `baseurl` jest poprawna.
 
-```
-
-```
-
-
-# CHAPTER 11 - Managing Software
-
-**Yum** ​stoi od Yellowdog update manager. ​ **EPEL** ​to jest repozytorium specyficzne dla Fedory i
-jako takie nie jest zalecane do systemow producyjnych. Ale mozna dodac jak sie chce miec
-cutting edge (​ **ale nie na RHELU bo sie wysypie support** ​).
-Generalnie informacje o repozytoriach sa trzymane w plikach ​ **.REPO** ​. Informacje sa
-przechowywane w ​ **/ETC/YUM.REPOS.D/** ​Nie ma do tego GUI wiec trzeba klepac z palucha.
-Istnieje mozliwoc wpisania kilku repoozytoriow w jednym
-pliku. W pliku mozna wrzucic (jak cos to ​ **MAN YUM.CONF** ​ i szukaj przykladow):
-*​ **[label]** ​ The label used as an identifier in the repository file.
-* ​ **name=** ​ The name of the repository.
-* ​ **mirrorlist=** ​ Refers to a URL where information about mirror servers for this server can be
-obtained. Typically used for big online repositories only.
-* ​ **baseurl=** ​ The base URL where to go to find the RPM packages
-* ​ **gpgcheck=** ​ Set to ​ **1** ​ if a ​ **GPG** ​integrity check needs to be performed on the packages. If set to
-**1** ​, a ​ **gpgkey** ​ is required.
-* ​ **gpgkey=** ​ Specifies the location of the ​ **GPG** ​key that is used to check package integrity.
-Generalnie RHEL sobie ogarnia temat tak, ze repozytoria maja rozne statusy/labele.
-* ​ **base** ​- This is the base repository that contains all essential Red Hat software. Its packages
-are fully supported.
-* ​ **updates** ​- A specific repository that contains updates only.
-* ​ **optional** ​- This repository contains packages that are provided for the convenience of Red Hat
-customers. The packages in this repository are open source and not supported by Red Hat.
-* ​ **supplementary** ​- This repository contains packages that are provided for the convenience of
-Red Hat customers. The packages in this repository are proprietary and not supported by RHat.
-* ​ **extras** ​- repository contains packages that are provided for the convenience of Red Hat
-customers. Software in this repository comes from different sources and is not supported by RH
-* ​ **@anaconda** ​ - to nie jest tak naprawde repo, ale na listach pakietow czy cos jest uzywane jako
-zrodla pochodzenia pakietu przy instalacji (@anakonda to installer)
-Dla security wiekszosc repozytoriow jest podpisywana za pomoca ​ **GPG** ​- jest to ustawiane w
-pliku z repozytorium. Za pierwszym polaczeniem sie pyta czy pociagnac ten klucz na lokalnego
-kompa i jesli tak to potem przy update bedzie porownywal podpisy. Domyslnie te klucze laduja
-
-
-w ​ **/ETC/PKI/RPM-GPG** ​.
-**YUM** ​ma szereg polecen:
-* ​ **repolist** ​- pokazuje liste repozytoriow
-* ​ **search** ​- Search for the exact name of a package
-*​ **[what]provides */name** ​ - Perform a deep search in the package to look for specific files within
-the package
-* ​ **info** ​- Provide more information about the package
-* ​ **install** ​- Install the package (Z opcja ​ **-y** ​to nie bedzie pytal o potwierdzenie)
-* ​ **remove** ​- Remove the package
-* ​ **list [all | installed]** ​ - List all or installed packages (mozna tez dac jako parametr na koncu
-nazwe)
-* ​ **group list** ​ - List package groups - mozna dac GROUP LIST HIDDEN - to pokaze o wiele
-wiecej
-* ​ **group install** ​ - Install all packages from a group
-* ​ **group info XXX** ​- daje info o calej grupie
-* ​ **update** ​- Update packages specified (​ **KERNEL** ​ nigdy nie jest domyslnie nadpisywany, ale
-instalowany obok istniejacego)
-* ​ **clean all** ​ - Remove all stored metadata
-* ​ **history** ​- wszystkie logi z YUMa sa zapisywanie do​ **/VAR/LOG/YUM.LOG** ​. Generalnie jak sie
-pokaze liste to mozna dac ​ **HISTORY UNDO XXX** ​ gdzie ​ **XXX** ​to jest numer akcji. Wtedy sie
-'unduuje' to
-Generalnie dalej (choc deprecated) jest ​ **RPM** ​. On tylko instalowal, a nie resolvoval zaleznosci.
-Dlatego tez obecnie sie go nie stosuje, a paczki RPMowe mozna po prostu instalowac za
-pomoca​ **YUM INSTALL NAZWAPACZKINADYSKU.RPM** ​ - jest to o tyle tez istotne, ze zarowno
-**YUM** ​jak i ​ **RPM** ​maja swoje bazy danych pakietow. ​ **YUM** ​uaktualnia tez ​ **RPMowa** ​, ale w druga
-strone to nie dziala.
-By przepytac baze ​ **RPMowa dajemy RPM -QA** ​ - pokazuje wszystko co jest zainstalowane (jak
-sie ma nazwe to GREPuj po niej).
-By dostac informacje o specyficznym pakiecie dajemy ​ **RPM -QI NAZWA_PAKIETU**
-Wszystkie pliki w pakiecie: ​ **RPM -QL NAZWA_PAKIETU**
-Dokumentacja w pakiecie: ​ **RPM -QD NAZWA_PAKIETU**
-Pliki konfiguracyjne: ​ **RPM -QC NAZWA_PAKIETU**
-Jak masz info o pliku jakims to mozesz dowiedziec sie w jakim pakiecie jest: ​ **RPM -QF
-NAZWA_PLIKU**
-By zobaczyc czy sa jakies skrypty w pakiecie: ​ **RPM -Q --scripts** ​ (Takze do zastosowania z
-plikami)
-Pokazuje jakie czesci packagu zostaly zmienione od instalacji: ​ **RPM -V** ​ (dla jednego pakietu) -
-wersja z flaga -Va pokaze dla wszystkich pakietow.
-
-
-Domyslnie queriesy leca po bazie danych. Jesli jednakze masz jakis plik juz sciagniety to
-uzywajac flag​ **-P** ​ mozna zapytac ten konkretny plik o cos (glownie z druga flaga ​ **--scripts** ​).
-Zasadniczo jesli chcesz querowac repo zdalne no to masz problem. Bo by to zrobic trzeba
-zainstalowac pakiet ​ **YUM-UTILS** ​, ktory daje kilka ciekawych bajerkow.
-**REPOQUERY** ​ma w sumie prawie taka sama funkcjonalnosc jak ​ **RPM -Q** ​ (tylko, ze bez
---scripts). Z kolei jak sie chce sciagnac z repo tylko plik to potrzebny jest util
-**YUMDOWNLOADER** ​.
-
-
-##########################
-```markdown
-# ROZDZIAŁ 11 - MANAGING SOFTWARE
-
-Współczesne systemy RHEL używają `dnf` (który jest następcą i logicznym rozwinięciem `yum`). Warto pamiętać, że chociaż komendy `yum` są wciąż dostępne (jako aliasy), to pod spodem operuje silnik `dnf`.
-
-## 1. Repozytoria i konfiguracja
-
-Informacje o repozytoriach znajdują się w plikach z rozszerzeniem `.repo` w katalogu `/etc/yum.repos.d/`.
-
-### Struktura pliku repozytorium:
-```ini
-[label]
-name=Nazwa Repozytorium
-baseurl=http://serwer/repo/
-enabled=1
-gpgcheck=1
-gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-nazwa
-sslverify=1
-
-```
-
-* **GPG Check:** Kluczowy element bezpieczeństwa. Jeśli `gpgcheck=1`, system weryfikuje podpis cyfrowy pakietów. Klucze importuje się do `/etc/pki/rpm-gpg/`.
-* **SSL:** W przypadku problemów z certyfikatami na egzaminacyjnym serwerze (np. samopodpisane certyfikaty), można dodać `sslverify=0` w sekcji repozytorium (choć w środowisku produkcyjnym jest to niezalecane).
-
-### Uwaga: Subscription Manager i lokalne repozytoria
-
-Podczas pracy z lokalnymi repozytoriami (np. na egzaminie), `subscription-manager` może blokować dostęp do darmowych źródeł pakietów. Aby go wyłączyć:
-
-1. Edytuj `/etc/dnf/plugins/subscription-manager.conf`.
-2. Zmień `enabled=1` na `enabled=0`.
-
-## 2. Zarządzanie pakietami (DNF / YUM)
-
-DNF automatycznie rozwiązuje zależności (dependencies) pakietów.
-
-* `dnf repolist`: Pokazuje listę aktywnych repozytoriów.
-* `dnf search nazwa`: Szuka pakietu po nazwie.
-* `dnf provides "*/nazwa_pliku"`: Bardzo przydatna komenda, gdy nie znasz nazwy pakietu, ale wiesz, jaki plik jest Ci potrzebny.
-* `dnf install nazwa` (`-y` automatycznie akceptuje).
-* `dnf remove nazwa`: Usuwa pakiet.
-* `dnf history`: Pokazuje historię operacji. `dnf history undo ID` cofa wybraną akcję.
-* `dnf clean all`: Czyści pamięć podręczną (metadata) – przydatne, gdy repozytorium było edytowane.
-* `dnf group list`: Listuje grupy pakietów (np. "Development Tools").
-
-## 3. Praca z pakietami RPM (niski poziom)
-
-Czasami instalujemy pojedyncze pliki `.rpm` pobrane z sieci.
-
-* `dnf install ./pakiet.rpm`: Najlepsza metoda (rozwiązuje zależności).
-* `rpm -ivh pakiet.rpm`: Instalacja "na twardo" bez rozwiązywania zależności (niezalecane, jeśli nie musisz).
-
-### Zapytania do bazy RPM (`rpm -q`)
-
-Baza `rpm` jest niezależna od metadanych `dnf`.
-
-* `rpm -qa`: Listuje wszystkie zainstalowane pakiety.
-* `rpm -qi nazwa`: Informacje o pakiecie.
-* `rpm -ql nazwa`: Lista wszystkich plików w pakiecie.
-* `rpm -qc nazwa`: Lista plików konfiguracyjnych pakietu.
-* `rpm -qf /ścieżka/do/pliku`: Sprawdza, jaki pakiet dostarczył dany plik.
-* `rpm -V nazwa`: **Weryfikacja pakietu**. Sprawdza, czy pliki w systemie nie różnią się od oryginału (np. czy nie zostały zmodyfikowane lub uszkodzone).
-
-## 4. Dodatkowe narzędzia (`yum-utils`)
-
-`yum-utils` to zestaw narzędzi ułatwiający administrację:
-
-* `repoquery -l nazwa`: Pozwala przeglądać zawartość pakietów w repozytorium **bez ich pobierania**.
-* `yumdownloader --resolve nazwa`: Pobiera pakiet wraz z jego zależnościami do bieżącego katalogu.
-
----
-
-**Ważne notatki na egzamin:**
-
-1. Zawsze sprawdzaj `gpgkey` – jeśli repo jest udostępnione lokalnie, często musisz zaimportować klucz komendą `rpm --import /path/to/key`.
-2. Na egzaminie GUI prawdopodobnie będzie niedostępne – opanuj do perfekcji komendy `dnf` oraz `rpm`.
-3. Podczas rozwiązywania zadań z repozytoriami, zawsze weryfikuj czy repo jest `enabled=1` i czy ścieżka w `baseurl` jest poprawna.
-
-```
-
-```
 
 # CHAPTER 12 - Managing recurring tasks
 
-Generalnie sa dwa. Najwazniejszy jest ​ **CRON** ​, ktory jest demonem startujacym razem z
-systemem (RHEL uzywa go internal - chocby do rotowania logow). Demon co minute sie budzi,
-patrzy co ma odpalic i jak cos to odpala. Sprawdzamy status ​ **SYSTEMCTL STATUS CROND -l** ​.
-Cron korzysta ze swojej stringowej skladni:
-* minute 0–59
-* hour 0–23
-* day of month 1–31
-* month 1–12 (or names which are better avoided)
-* day of week 0–7 (Sunday is 0 or 7, or names [which are better avoided])
-o) * 11 * * * Any minute between 11:00 and 11:59 (probably not what you want)
-o) 0 11 * * 1-5 Every day at 11 a.m. on weekdays only
-o) 0 7-18 * * 1-5 Every hour on weekdays on the hour
-o) 0 */2 2 12 5 Every 2 hours on the hour on December second and every Friday in December
-Konfig jest w ​ **/ETC/CRONTAB** ​, ale ​tam sie nigdy nic nie zmienia!​ Daje jednakze ten plik sporo
-informacji. To sa miejsca, gdzie sie zaczytuje konfig:
-* Cron files in ​ **/etc/cron.d** ​- ​MUSZA BYC EXECUTABLE BY SIE WYKONALY!!!!!!!!!!
-* Scripts in​ **/etc/cron.hourly, cron.daily, cron.weekly, and cron.monthly**
-* User-specific files that are created with ​ **crontab -e**
-Kazdy user moze miec swojego crontaba. By go edytowac wali sie ​ **CRONTAB -E** ​. Zmiany sa
-dopisywane do folderu ​ **/VAR/SPOOL/CRON** ​ w pliku per user. Jednak tych plikow nie wolno tez
-edytowac. Edytuje sie zawsze za pomoca ​ **CRONTAB -E** ​. ROOT moze edytowac crontaba
-poszczegolnych userow za pomoca ​ **CRONTAB -E -U NAZWA_USERA** ​.
-Wszystkie inne crony beda odpalane z poziomu ​ **ROOTa** ​. Najlepszym sposobem to wrzucenie
-pliku spelniajacego syntax crontaba do ​ **/ETC/CRON.D** ​ -> bedzie sie mielilo samo.
-Ostatnimi sa convenience pliki w folderze​ **/ETC (cron.daily, hourly, weekly, monthly)** ​. Z
-definicji to installery pakietow tam cos wrzucaja.
-Istnieje taki serwis jak ​ **ANACRON (TYLKO DLA ROOTA)** ​. Jego plik konfiguracyjny jest
-oczywiscie w ​ **/ETC/ANACRON** ​ -> to jest glownie uzywane do schedulowania taskow, ktore
-maja byc wykonywane np. raz dziennie bez specyfikacji dokladnie kiedy. Mozna to zakladac np.
-przy serwerach, ktore sa wylaczane na jakis przedzial czasu w ciagu dnia czy cos. Plik
-konfiguracyjny mowi jasno jak to dziala.
+Automatyzacja i planowanie zadań w systemie Linux opiera się głównie na demonach `crond` oraz `atd`, a w nowoczesnych systemach również na komponentach `systemd` (timers).
+
+## 1. CRON – Zadania cykliczne
+
+Demon `crond` uruchamia się razem z systemem i co minutę sprawdza, czy nadszedł czas na wykonanie jakiegoś zadania. Status usługi sprawdzamy poleceniem:
+```bash
+systemctl status crond -l
+
+```
+
+### Składnia tabeli crona (Crontab)
+
+Każdy wpis w tabeli składa się z 5 pól określających czas oraz pola z komendą do wykonania:
+
+```text
+* * * * * /sciezka/do/komendy
+│ │ │ │ │
+│ │ │ │ └─ Dzień tygodnia (0 - 7, gdzie 0 i 7 to Niedziela)
+│ │ │ └─── Miesiąc (1 - 12)
+│ │ └───── Dzień miesiąca (1 - 31)
+│ └─────── Godzina (0 - 23)
+└───────── Minuta (0 - 59)
+
+```
+
+**Przykłady harmonogramów:**
+
+* `0 11 * * 1-5` – Codziennie od poniedziałku do piątku o godzinie 11:00.
+* `0 */2 * * *` – Co dwie godziny, dokładnie na początku godziny.
+* `30 2 * * 0` – W każdą niedzielę o godzinie 02:30.
+* **Ważna zasada:** Każdy plik konfiguracyjny crontaba **musi kończyć się pustą nową linią** (blank line), w przeciwnym razie ostatnie zadanie może nie zostać wykonane przez demona!
+
+### Gdzie przechowywane są konfiguracje crona?
+
+1. **Główny plik systemowy:** `/etc/crontab` – zawiera dodatkowo kolumnę określającą użytkownika, z którego uprawnieniami ma się wykonać zadanie. Nie edytuje się go bezpośrednio do zadań użytkowników.
+2. **Katalog systemowy:** `/etc/cron.d/` – pliki wrzucane tutaj muszą mieć odpowiednie uprawnienia i wewnątrz definiować użytkownika (analogicznie do `/etc/crontab`). Pliki te **muszą być wykonywalne** (`executable`).
+3. **Katalogi uproszczone (Convenience directories):** `/etc/cron.hourly`, `/etc/cron.daily`, `/etc/cron.weekly`, `/etc/cron.monthly` – wrzucone tam skrypty wykonują się automatycznie w ustalonych przez system odstępach czasu (często zarządzane przez anacron).
+4. **Crontaby użytkowników:** Każdy użytkownik może zarządzać własnymi zadaniami za pomocą polecenia:
+* `crontab -e` – edycja własnego harmonogramu.
+* `crontab -l` – wylistowanie zadań.
+* `crontab -r` – usunięcie całego crontaba.
+* Pliki te lądują w katalogu `/var/spool/cron/`, ale **nigdy nie edytuje się ich ręcznie z poziomu tego katalogu** – zawsze należy używać polecenia `crontab -e`.
+* **Root** może zarządzać crontabami innych użytkowników: `crontab -e -u nazwa_uzytkownika`.
 
 
-Security w cronie jest proste - istnieja pliki ​ **/ETC/CRON.ALLOW i /ETC/CRON.DENY** ​. Jak ten
-pierwszy istnieje to user MUSI byc w nim by w ogole dopisywac do crona. Tak samo jesli
-istnieje
-ten drugi to user ​ **NIE MOZE** ​ w nim byc by cos dopisac.
-Drugim serwisem, ktory ogarnia egzekucje czasowa jest ​ **AT** ​(ATD - AT DEMON). Generalnie
-mozna pisac np: ​ **at 14:00 lub at noon** ​. Jak sie to wpisze to pojawia sie konsola gdzie pisze sie
-polecenia do wykonania. Konsole zamyka sie kombinacja ​ **Ctrl+D** ​. Do listowania tematu daje
-sie ​ **ATQ** ​(od queue) ktora podaje tez numerki. Tego numerka mozna uzyc w komendzie​ **ATRM
-NUMER** ​ co spowoduje usuniecie zaplanowanego zadania. Też istnieje ​ **/ETC/AT.DENY i
-ALLOW**
 
-####################
-```markdown
+### Kontrola dostępu (Security)
+
+Dostęp do polecenia `crontab` dla zwykłych użytkowników regulują pliki:
+
+* `/etc/cron.allow` – jeśli istnieje, tylko użytkownicy w nim wymienieni mogą używać crona.
+* `/etc/cron.deny` – jeśli istnieje, użytkownicy w nim wymienieni mają zablokowany dostęp.
+
+---
+
+## 2. ANACRON – Zadania dla systemów niestale włączonych
+
+Tradycyjny `cron` zakłada, że komputer działa 24/7. Jeśli serwer był wyłączony w godzinach, w których miało się wykonać zadanie z crona (np. o 3:00 w nocy), zadanie przepada. Do akcji wkracza **Anacron**.
+
+* **Dla kogo:** Głównie dla stacji roboczych lub serwerów wyłączanych okresowo.
+* **Jak działa:** Anacron nie sprawdza dokładnej godziny. Sprawdza, czy od ostatniego uruchomienia danego zadania minęła określona liczba dni (np. 1 dzień dla zadań dziennych). Jeśli w wyznaczonym czasie system był wyłączony, anacron odpali zaległe zadanie niedługo po ponownym uruchomieniu systemu.
+* **Konfiguracja:** Znajduje się w pliku `/etc/anacrontab`.
+* **Ograniczenie:** Anacron uruchamia się standardowo z uprawnieniami **root** i nie obsługuje precyzyjnego harmonogramu minutowego/godzinowego (działa na interwałach dniowych).
+
+---
+
+## 3. Systemd Timers (Nowoczesna alternatywa dla Crona)
+
+W nowoczesnych dystrybucjach RHEL obok crona funkcjonują **Systemd Timers**, które ściśle współpracują z menedżerem systemd.
+
+* **Zalety:** Posiadają wbudowane wsparcie dla logowania (journald), mogą powiązać uruchomienie zadania z wystąpieniem konkretnego zdarzenia (np. start sieci, upływ czasu od rozruchu systemu) oraz oferują dokładniejszą kontrolę nad zależnościami.
+* **Jak to działa:** Składają się z dwóch jednostek o tej samej nazwie:
+1. Plik `.service` – definiuje, *co* ma się wykonać (jak zwykła usługa systemd).
+2. Plik `.timer` – definiuje, *kiedy* ma się wykonać (harmonogram).
+
+
+* **Przydatne polecenia:**
+* `systemctl list-timers` – Wyświetla listę wszystkich aktywnych timerów w systemie wraz z informacją, kiedy uruchomятся ponownie (odpowiednik dawnego *cronnext*).
+
+
+
+---
+
+## 4. AT – Zadania jednorazowe
+
+Jeśli potrzebujesz wykonać komendę **jednorazowo** w określonym czasie w przyszłości, używasz demona `atd` oraz polecenia `at`.
+
+* **Przykład użycia:**
+```bash
+at 14:00
+at> tar -czf /backup/home.tar.gz /home
+at> <Ctrl + D>
+
+```
+
+
+Wpisanie `at 14:00` (lub np. `at noon`, `at tomorrow`, `at now + 1 hour`) otwiera interaktywną powłokę, w której wpisujesz komendy. Wpisywanie kończysz kombinacją klawiszy **`Ctrl + D`**.
+* **Zarządzanie kolejką zadań:**
+* `atq` (At Queue) – Wyświetla listę zaplanowanych zadań jednorazowych wraz z ich numerami w kolejności.
+* `atrm NUMER` – Usuwa wskazane zadanie z kolejki przed jego wykonaniem.
+
+
+* **Bezpieczeństwo:** Podobnie jak cron, `at` korzysta z plików `/etc/at.allow` oraz `/etc/at.deny` do kontroli uprawnień użytkowników.
+
+
+
+
+
 # ROZDZIAŁ 13 - CONFIGURING LOGGING
 
 W RHEL 8/9/10 logowanie oparte jest na współpracy dwóch głównych systemów: **journald** (zbiera dane binarne z całego systemu) oraz **rsyslog** (przetwarza i zapisuje logi do plików tekstowych w `/var/log`).
