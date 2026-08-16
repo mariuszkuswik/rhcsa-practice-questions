@@ -1174,6 +1174,89 @@ belonging to a specific VM
 * ​ **start <vmname>** ​ Starts a VM
 *​ **reboot <vmname>** ​ Reboots a VM
 
+################################
+
+```markdown
+# ROZDZIAŁ 11 - MANAGING SOFTWARE
+
+Współczesne systemy RHEL używają `dnf` (który jest następcą i logicznym rozwinięciem `yum`). Warto pamiętać, że chociaż komendy `yum` są wciąż dostępne (jako aliasy), to pod spodem operuje silnik `dnf`.
+
+## 1. Repozytoria i konfiguracja
+
+Informacje o repozytoriach znajdują się w plikach z rozszerzeniem `.repo` w katalogu `/etc/yum.repos.d/`.
+
+### Struktura pliku repozytorium:
+```ini
+[label]
+name=Nazwa Repozytorium
+baseurl=http://serwer/repo/
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-nazwa
+sslverify=1
+
+```
+
+* **GPG Check:** Kluczowy element bezpieczeństwa. Jeśli `gpgcheck=1`, system weryfikuje podpis cyfrowy pakietów. Klucze importuje się do `/etc/pki/rpm-gpg/`.
+* **SSL:** W przypadku problemów z certyfikatami na egzaminacyjnym serwerze (np. samopodpisane certyfikaty), można dodać `sslverify=0` w sekcji repozytorium (choć w środowisku produkcyjnym jest to niezalecane).
+
+### Uwaga: Subscription Manager i lokalne repozytoria
+
+Podczas pracy z lokalnymi repozytoriami (np. na egzaminie), `subscription-manager` może blokować dostęp do darmowych źródeł pakietów. Aby go wyłączyć:
+
+1. Edytuj `/etc/dnf/plugins/subscription-manager.conf`.
+2. Zmień `enabled=1` na `enabled=0`.
+
+## 2. Zarządzanie pakietami (DNF / YUM)
+
+DNF automatycznie rozwiązuje zależności (dependencies) pakietów.
+
+* `dnf repolist`: Pokazuje listę aktywnych repozytoriów.
+* `dnf search nazwa`: Szuka pakietu po nazwie.
+* `dnf provides "*/nazwa_pliku"`: Bardzo przydatna komenda, gdy nie znasz nazwy pakietu, ale wiesz, jaki plik jest Ci potrzebny.
+* `dnf install nazwa` (`-y` automatycznie akceptuje).
+* `dnf remove nazwa`: Usuwa pakiet.
+* `dnf history`: Pokazuje historię operacji. `dnf history undo ID` cofa wybraną akcję.
+* `dnf clean all`: Czyści pamięć podręczną (metadata) – przydatne, gdy repozytorium było edytowane.
+* `dnf group list`: Listuje grupy pakietów (np. "Development Tools").
+
+## 3. Praca z pakietami RPM (niski poziom)
+
+Czasami instalujemy pojedyncze pliki `.rpm` pobrane z sieci.
+
+* `dnf install ./pakiet.rpm`: Najlepsza metoda (rozwiązuje zależności).
+* `rpm -ivh pakiet.rpm`: Instalacja "na twardo" bez rozwiązywania zależności (niezalecane, jeśli nie musisz).
+
+### Zapytania do bazy RPM (`rpm -q`)
+
+Baza `rpm` jest niezależna od metadanych `dnf`.
+
+* `rpm -qa`: Listuje wszystkie zainstalowane pakiety.
+* `rpm -qi nazwa`: Informacje o pakiecie.
+* `rpm -ql nazwa`: Lista wszystkich plików w pakiecie.
+* `rpm -qc nazwa`: Lista plików konfiguracyjnych pakietu.
+* `rpm -qf /ścieżka/do/pliku`: Sprawdza, jaki pakiet dostarczył dany plik.
+* `rpm -V nazwa`: **Weryfikacja pakietu**. Sprawdza, czy pliki w systemie nie różnią się od oryginału (np. czy nie zostały zmodyfikowane lub uszkodzone).
+
+## 4. Dodatkowe narzędzia (`yum-utils`)
+
+`yum-utils` to zestaw narzędzi ułatwiający administrację:
+
+* `repoquery -l nazwa`: Pozwala przeglądać zawartość pakietów w repozytorium **bez ich pobierania**.
+* `yumdownloader --resolve nazwa`: Pobiera pakiet wraz z jego zależnościami do bieżącego katalogu.
+
+---
+
+**Ważne notatki na egzamin:**
+
+1. Zawsze sprawdzaj `gpgkey` – jeśli repo jest udostępnione lokalnie, często musisz zaimportować klucz komendą `rpm --import /path/to/key`.
+2. Na egzaminie GUI prawdopodobnie będzie niedostępne – opanuj do perfekcji komendy `dnf` oraz `rpm`.
+3. Podczas rozwiązywania zadań z repozytoriami, zawsze weryfikuj czy repo jest `enabled=1` i czy ścieżka w `baseurl` jest poprawna.
+
+```
+
+```
+
 
 # CHAPTER 11 - Managing Software
 
@@ -1258,6 +1341,88 @@ zainstalowac pakiet ​ **YUM-UTILS** ​, ktory daje kilka ciekawych bajerkow.
 **YUMDOWNLOADER** ​.
 
 
+##########################
+```markdown
+# ROZDZIAŁ 11 - MANAGING SOFTWARE
+
+Współczesne systemy RHEL używają `dnf` (który jest następcą i logicznym rozwinięciem `yum`). Warto pamiętać, że chociaż komendy `yum` są wciąż dostępne (jako aliasy), to pod spodem operuje silnik `dnf`.
+
+## 1. Repozytoria i konfiguracja
+
+Informacje o repozytoriach znajdują się w plikach z rozszerzeniem `.repo` w katalogu `/etc/yum.repos.d/`.
+
+### Struktura pliku repozytorium:
+```ini
+[label]
+name=Nazwa Repozytorium
+baseurl=http://serwer/repo/
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-nazwa
+sslverify=1
+
+```
+
+* **GPG Check:** Kluczowy element bezpieczeństwa. Jeśli `gpgcheck=1`, system weryfikuje podpis cyfrowy pakietów. Klucze importuje się do `/etc/pki/rpm-gpg/`.
+* **SSL:** W przypadku problemów z certyfikatami na egzaminacyjnym serwerze (np. samopodpisane certyfikaty), można dodać `sslverify=0` w sekcji repozytorium (choć w środowisku produkcyjnym jest to niezalecane).
+
+### Uwaga: Subscription Manager i lokalne repozytoria
+
+Podczas pracy z lokalnymi repozytoriami (np. na egzaminie), `subscription-manager` może blokować dostęp do darmowych źródeł pakietów. Aby go wyłączyć:
+
+1. Edytuj `/etc/dnf/plugins/subscription-manager.conf`.
+2. Zmień `enabled=1` na `enabled=0`.
+
+## 2. Zarządzanie pakietami (DNF / YUM)
+
+DNF automatycznie rozwiązuje zależności (dependencies) pakietów.
+
+* `dnf repolist`: Pokazuje listę aktywnych repozytoriów.
+* `dnf search nazwa`: Szuka pakietu po nazwie.
+* `dnf provides "*/nazwa_pliku"`: Bardzo przydatna komenda, gdy nie znasz nazwy pakietu, ale wiesz, jaki plik jest Ci potrzebny.
+* `dnf install nazwa` (`-y` automatycznie akceptuje).
+* `dnf remove nazwa`: Usuwa pakiet.
+* `dnf history`: Pokazuje historię operacji. `dnf history undo ID` cofa wybraną akcję.
+* `dnf clean all`: Czyści pamięć podręczną (metadata) – przydatne, gdy repozytorium było edytowane.
+* `dnf group list`: Listuje grupy pakietów (np. "Development Tools").
+
+## 3. Praca z pakietami RPM (niski poziom)
+
+Czasami instalujemy pojedyncze pliki `.rpm` pobrane z sieci.
+
+* `dnf install ./pakiet.rpm`: Najlepsza metoda (rozwiązuje zależności).
+* `rpm -ivh pakiet.rpm`: Instalacja "na twardo" bez rozwiązywania zależności (niezalecane, jeśli nie musisz).
+
+### Zapytania do bazy RPM (`rpm -q`)
+
+Baza `rpm` jest niezależna od metadanych `dnf`.
+
+* `rpm -qa`: Listuje wszystkie zainstalowane pakiety.
+* `rpm -qi nazwa`: Informacje o pakiecie.
+* `rpm -ql nazwa`: Lista wszystkich plików w pakiecie.
+* `rpm -qc nazwa`: Lista plików konfiguracyjnych pakietu.
+* `rpm -qf /ścieżka/do/pliku`: Sprawdza, jaki pakiet dostarczył dany plik.
+* `rpm -V nazwa`: **Weryfikacja pakietu**. Sprawdza, czy pliki w systemie nie różnią się od oryginału (np. czy nie zostały zmodyfikowane lub uszkodzone).
+
+## 4. Dodatkowe narzędzia (`yum-utils`)
+
+`yum-utils` to zestaw narzędzi ułatwiający administrację:
+
+* `repoquery -l nazwa`: Pozwala przeglądać zawartość pakietów w repozytorium **bez ich pobierania**.
+* `yumdownloader --resolve nazwa`: Pobiera pakiet wraz z jego zależnościami do bieżącego katalogu.
+
+---
+
+**Ważne notatki na egzamin:**
+
+1. Zawsze sprawdzaj `gpgkey` – jeśli repo jest udostępnione lokalnie, często musisz zaimportować klucz komendą `rpm --import /path/to/key`.
+2. Na egzaminie GUI prawdopodobnie będzie niedostępne – opanuj do perfekcji komendy `dnf` oraz `rpm`.
+3. Podczas rozwiązywania zadań z repozytoriami, zawsze weryfikuj czy repo jest `enabled=1` i czy ścieżka w `baseurl` jest poprawna.
+
+```
+
+```
+
 # CHAPTER 12 - Managing recurring tasks
 
 Generalnie sa dwa. Najwazniejszy jest ​ **CRON** ​, ktory jest demonem startujacym razem z
@@ -1303,6 +1468,77 @@ polecenia do wykonania. Konsole zamyka sie kombinacja ​ **Ctrl+D** ​. Do lis
 sie ​ **ATQ** ​(od queue) ktora podaje tez numerki. Tego numerka mozna uzyc w komendzie​ **ATRM
 NUMER** ​ co spowoduje usuniecie zaplanowanego zadania. Też istnieje ​ **/ETC/AT.DENY i
 ALLOW**
+
+####################
+```markdown
+# ROZDZIAŁ 13 - CONFIGURING LOGGING
+
+W RHEL 8/9/10 logowanie oparte jest na współpracy dwóch głównych systemów: **journald** (zbiera dane binarne z całego systemu) oraz **rsyslog** (przetwarza i zapisuje logi do plików tekstowych w `/var/log`).
+
+## 1. System logowania w RHEL
+
+* **Journald:** Serwis systemowy, który gromadzi logi z kernela, procesów startowych (boot) i usług. Domyślnie logi są w pamięci RAM (`/run/log/journal`) i **znikają po restarcie**. Można włączyć trwałość (persystencję), tworząc katalog `/var/log/journal`.
+* **Rsyslog:** Klasyczny demon logowania. Pobiera logi z journald lub bezpośrednio od usług i zapisuje je w plikach tekstowych w `/var/log`.
+* **Logrotate:** Narzędzie automatyzujące rotację logów, aby nie zapełniły dysku (konfiguracja: `/etc/logrotate.conf`).
+
+## 2. Ważne pliki w `/var/log`
+
+* `/var/log/messages`: Główne, ogólne logi systemowe. Tutaj trafia większość zdarzeń.
+* `/var/log/secure`: Logi uwierzytelniania (logowanie SSH, sudo, zmiany haseł). Kluczowe przy dochodzeniach włamaniowych.
+* `/var/log/dmesg`: Logi startowe kernela (widoczne również komendą `dmesg`).
+* `/var/log/boot.log`: Informacje o starcie usług systemowych.
+* `/var/log/maillog`: Logi serwera pocztowego.
+* `/var/log/audit/audit.log`: Logi audytu (m.in. SELinux).
+* `/var/log/cron`: Logi zadań zaplanowanych (`crond`).
+* `/var/log/samba/` oraz `/var/log/httpd/`: Przykłady usług, które często piszą własne logi bezpośrednio, z pominięciem rsysloga.
+
+## 3. Praca z dziennikiem (Journalctl)
+
+`journalctl` to narzędzie do przeglądania binarnych logów z journald.
+
+* `journalctl`: Pokazuje cały dziennik (od najstarszych wpisów).
+* `journalctl -f`: Tryb "follow" (na żywo, jak `tail -f`).
+* `journalctl -n 20`: Pokazuje 20 ostatnich linii.
+* `journalctl -p err`: Filtruje logi według priorytetu (w tym przypadku błędy i krytyczne).
+* `journalctl --since "2026-08-15 10:00" --until "now"`: Filtrowanie po czasie.
+* `journalctl -u nazwa_uslugi`: Logi dla konkretnej usługi systemd.
+* `journalctl -k`: Tylko komunikaty kernela.
+* `journalctl --no-pager`: Wypisuje wszystko bez użycia `less` (przydatne do skryptów).
+
+## 4. Konfiguracja Rsyslog (`/etc/rsyslog.conf`)
+
+Plik `/etc/rsyslog.conf` oraz skrypty w `/etc/rsyslog.d/` definiują reguły logowania. Reguła składa się z dwóch części: **FACILITY.PRIORITY** oraz **DESTINATION**.
+
+### Facilities (Kategorie):
+`auth/authpriv` (logowanie), `cron` (zadania crona), `kern` (kernel), `mail` (poczta), `user` (przestrzeń użytkownika), `local0-7` (lokalne/własne).
+
+### Priorities (Ważność - od najniższego do najwyższego):
+`debug`, `info`, `notice`, `warning`, `err`, `crit`, `alert`, `emerg`.
+*Zapis `mail.info` oznacza: loguj wszystko od `info` w górę dla kategorii `mail`.*
+
+### Przykładowa reguła:
+`*.info;mail.none;authpriv.none;cron.none  /var/log/messages`
+* Oznacza: Loguj wszystko powyżej `info`, z pominięciem maila, autoryzacji i crona, do pliku `/var/log/messages`. 
+* **Ważne:** Jeśli przed ścieżką dodasz myślnik (np. `- /var/log/messages`), rsyslog będzie buforował zapisy, co poprawia wydajność, ale zwiększa ryzyko utraty najnowszych linii w razie awarii zasilania.
+
+## 5. Ręczne pisanie do logów (`logger`)
+
+Możesz wysłać własną wiadomość do logów systemowych:
+```bash
+logger -p user.err "To jest komunikat o błędzie"
+
+```
+
+Wpis trafi bezpośrednio do `/var/log/messages` (lub innego miejsca zdefiniowanego dla kategorii `user.err`).
+
+## 6. Logi zadań (Cron / At)
+
+* Logi zadań `cron` trafiają zazwyczaj do `/var/log/cron`.
+* Logi zadań `at` są zazwyczaj powiązane z logami systemowymi (`/var/log/messages`) lub powiadomieniami wysyłanymi przez `mail`.
+
+```
+
+```
 
 
 # ROZDZIAL 13 - CONFIGURING LOGGING
@@ -1401,6 +1637,77 @@ Podobnie jak w ​ **TAIL** ​jest przelacznik ​ **-N** ​. Flaga ​ **-P**
 Oczywiscie to nie jest persystentne, ale moze byc jak sie stworzy plik: ​ **/VAR/LOG/JOURNAL** ​,
 szczegoly dotyczace rotowania tego pliku sa w ​ **/ETC/SYSTEMD/JOURNALD.CONF** ​.
 
+#######################
+
+```markdown
+# ROZDZIAŁ 13 - CONFIGURING LOGGING
+
+W RHEL 8/9/10 logowanie oparte jest na współpracy dwóch głównych systemów: **journald** (zbiera dane binarne z całego systemu) oraz **rsyslog** (przetwarza i zapisuje logi do plików tekstowych w `/var/log`).
+
+## 1. System logowania w RHEL
+
+* **Journald:** Serwis systemowy, który gromadzi logi z kernela, procesów startowych (boot) i usług. Domyślnie logi są w pamięci RAM (`/run/log/journal`) i **znikają po restarcie**. Można włączyć trwałość (persystencję), tworząc katalog `/var/log/journal`.
+* **Rsyslog:** Klasyczny demon logowania. Pobiera logi z journald lub bezpośrednio od usług i zapisuje je w plikach tekstowych w `/var/log`.
+* **Logrotate:** Narzędzie automatyzujące rotację logów, aby nie zapełniły dysku (konfiguracja: `/etc/logrotate.conf`).
+
+## 2. Ważne pliki w `/var/log`
+
+* `/var/log/messages`: Główne, ogólne logi systemowe. Tutaj trafia większość zdarzeń.
+* `/var/log/secure`: Logi uwierzytelniania (logowanie SSH, sudo, zmiany haseł). Kluczowe przy dochodzeniach włamaniowych.
+* `/var/log/dmesg`: Logi startowe kernela (widoczne również komendą `dmesg`).
+* `/var/log/boot.log`: Informacje o starcie usług systemowych.
+* `/var/log/maillog`: Logi serwera pocztowego.
+* `/var/log/audit/audit.log`: Logi audytu (m.in. SELinux).
+* `/var/log/cron`: Logi zadań zaplanowanych (`crond`).
+* `/var/log/samba/` oraz `/var/log/httpd/`: Przykłady usług, które często piszą własne logi bezpośrednio, z pominięciem rsysloga.
+
+## 3. Praca z dziennikiem (Journalctl)
+
+`journalctl` to narzędzie do przeglądania binarnych logów z journald.
+
+* `journalctl`: Pokazuje cały dziennik (od najstarszych wpisów).
+* `journalctl -f`: Tryb "follow" (na żywo, jak `tail -f`).
+* `journalctl -n 20`: Pokazuje 20 ostatnich linii.
+* `journalctl -p err`: Filtruje logi według priorytetu (w tym przypadku błędy i krytyczne).
+* `journalctl --since "2026-08-15 10:00" --until "now"`: Filtrowanie po czasie.
+* `journalctl -u nazwa_uslugi`: Logi dla konkretnej usługi systemd.
+* `journalctl -k`: Tylko komunikaty kernela.
+* `journalctl --no-pager`: Wypisuje wszystko bez użycia `less` (przydatne do skryptów).
+
+## 4. Konfiguracja Rsyslog (`/etc/rsyslog.conf`)
+
+Plik `/etc/rsyslog.conf` oraz skrypty w `/etc/rsyslog.d/` definiują reguły logowania. Reguła składa się z dwóch części: **FACILITY.PRIORITY** oraz **DESTINATION**.
+
+### Facilities (Kategorie):
+`auth/authpriv` (logowanie), `cron` (zadania crona), `kern` (kernel), `mail` (poczta), `user` (przestrzeń użytkownika), `local0-7` (lokalne/własne).
+
+### Priorities (Ważność - od najniższego do najwyższego):
+`debug`, `info`, `notice`, `warning`, `err`, `crit`, `alert`, `emerg`.
+*Zapis `mail.info` oznacza: loguj wszystko od `info` w górę dla kategorii `mail`.*
+
+### Przykładowa reguła:
+`*.info;mail.none;authpriv.none;cron.none  /var/log/messages`
+* Oznacza: Loguj wszystko powyżej `info`, z pominięciem maila, autoryzacji i crona, do pliku `/var/log/messages`. 
+* **Ważne:** Jeśli przed ścieżką dodasz myślnik (np. `- /var/log/messages`), rsyslog będzie buforował zapisy, co poprawia wydajność, ale zwiększa ryzyko utraty najnowszych linii w razie awarii zasilania.
+
+## 5. Ręczne pisanie do logów (`logger`)
+
+Możesz wysłać własną wiadomość do logów systemowych:
+```bash
+logger -p user.err "To jest komunikat o błędzie"
+
+```
+
+Wpis trafi bezpośrednio do `/var/log/messages` (lub innego miejsca zdefiniowanego dla kategorii `user.err`).
+
+## 6. Logi zadań (Cron / At)
+
+* Logi zadań `cron` trafiają zazwyczaj do `/var/log/cron`.
+* Logi zadań `at` są zazwyczaj powiązane z logami systemowymi (`/var/log/messages`) lub powiadomieniami wysyłanymi przez `mail`.
+
+```
+
+```
 
 # ROZDZIAL 14 - MANAGING PARTITIONS
 
@@ -1478,6 +1785,116 @@ pisze (wylacza sie tak samo jak powyzsze)
 * ​ **TUNE2FS -L NAZWA** ​ pozwala ustawic labelke dla filesystemu (alternatywa to ​ **E2LABEL** ​)
 Dla ​ **XFS** ​narzedzie to ​ **XFS_ADMIN** ​.
 
+
+```markdown
+# ROZDZIAŁ 15 - LOGICAL VOLUMES (LVM)
+
+LVM (Logical Volume Manager) wprowadza warstwę abstrakcji między fizycznymi dyskami a systemem plików.
+
+## Architektura LVM
+1. **Physical Volumes (PV):** Fizyczne partycje lub całe dyski (np. `/dev/sdb1`), przygotowane do pracy z LVM.
+2. **Volume Group (VG):** Pula pamięci utworzona z jednego lub wielu PV. To "kontener" na przestrzeń dyskową.
+3. **Logical Volumes (LV):** "Wirtualne partycje" wycinane z VG. Na nich tworzymy systemy plików (XFS, Ext4).
+
+### Dlaczego LVM?
+* **Dynamiczna zmiana rozmiaru:** Możliwość powiększania LV w locie.
+* **Elastyczność:** Możesz łatwo dodać nowy dysk do systemu, dodać go do VG i powiększyć dowolny LV bez utraty danych.
+* **Snapshots:** Możliwość tworzenia punktów przywracania stanu danych.
+
+---
+
+## 1. Tworzenie LVM – krok po kroku
+
+### Krok 1: Inicjalizacja Physical Volume (PV)
+Po utworzeniu partycji (np. `fdisk`), zamień ją w PV:
+```bash
+pvcreate /dev/sdb2
+
+```
+
+* Weryfikacja: `pvs`, `pvdisplay`, `lsblk`.
+
+### Krok 2: Tworzenie Volume Group (VG)
+
+Tworzysz grupę z przypisanych jej PV:
+
+```bash
+vgcreate nazwa_vg /dev/sdb2
+
+```
+
+* Weryfikacja: `vgs`, `vgdisplay`.
+
+### Krok 3: Tworzenie Logical Volume (LV)
+
+Wycinasz "partycję" z dostępnej grupy:
+
+```bash
+# Tworzenie LV o rozmiarze 10GB z nazwą "lv_data" w grupie "nazwa_vg"
+lvcreate -n lv_data -L 10G nazwa_vg
+
+# Tworzenie LV wykorzystującego 50% dostępnej przestrzeni w grupie
+lvcreate -n lv_data -l 50%FREE nazwa_vg
+
+```
+
+* Dostęp: Ścieżka do wolumenu to `/dev/nazwa_vg/nazwa_lv` lub `/dev/mapper/nazwa_vg-nazwa_lv`.
+* Po utworzeniu LV: sformatuj go (`mkfs.xfs ...`) i zamontuj.
+
+---
+
+## 2. Zarządzanie rozmiarami
+
+### Rozszerzanie (W górę)
+
+Możesz rozszerzać VG oraz LV bez utraty danych.
+
+**Rozszerzanie VG:**
+Jeśli masz nowy dysk (`/dev/sdc1`), dodajesz go do istniejącej grupy:
+
+```bash
+vgextend nazwa_vg /dev/sdc1
+
+```
+
+**Rozszerzanie LV:**
+Używamy `lvextend` lub `lvresize`. Flaga `-r` (resizefs) jest kluczowa – automatycznie rozszerza ona system plików na nową przestrzeń.
+
+```bash
+# Dodanie 5GB do wolumenu
+lvextend -r -L +5G /dev/nazwa_vg/lv_data
+
+# Wykorzystanie całego wolnego miejsca w VG
+lvextend -r -l +100%FREE /dev/nazwa_vg/lv_data
+
+```
+
+### Zmniejszanie (W dół)
+
+* **XFS:** **Nie wspiera zmniejszania** systemu plików.
+* **Ext4:** Wspiera zmniejszanie, ale **tylko po odmontowaniu** systemu plików.
+
+**Procedura zmniejszania dla Ext4:**
+
+1. `umount /mnt/dane`
+2. `lvreduce -r -L -2G /dev/nazwa_vg/lv_data` (Flaga `-r` tutaj również zadba o przeskalowanie filesystemu przed zmniejszeniem wolumenu).
+
+---
+
+## 3. Przegląd parametrów `-l` (relatywnych) w `lvresize`
+
+Różnica w składni ma kluczowe znaczenie:
+
+* `lvresize -r -l 75%VG /dev/vgdata/lvdata`: Ustawia rozmiar LV na dokładnie **75% całkowitego rozmiaru VG**.
+* `lvresize -r -l +75%VG /dev/vgdata/lvdata`: Dodaje do istniejącego wolumenu przestrzeń równą **75% całkowitego rozmiaru VG**.
+* `lvresize -r -l 75%FREE /dev/vgdata/lvdata`: Ustawia rozmiar LV tak, aby zajmował **75% aktualnie wolnego miejsca** w VG.
+* `lvresize -r -l +75%FREE /dev/vgdata/lvdata`: Dodaje do wolumenu **75% dostępnego obecnie wolnego miejsca** w VG.
+
+> **Egzamin RHCSA:** Pamiętaj, że wszystkie zmiany w `/etc/fstab` dla nowych wolumenów logicznych muszą być trwałe, aby przetrwały reboot. Zawsze używaj UUID zamiast nazw ścieżek `/dev/...` w fstab!
+
+```
+
+```
 
 # CHAPTER 15 - Logical Volumes
 
