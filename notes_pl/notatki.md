@@ -734,95 +734,150 @@ Dodatek `with-mkhomedir` odpowiada dawnej opcji `--enablemkhomedir`, zapewniają
 
 ############################
 
+# ROZDZIAŁ 7 - CONFIGURATION PERMISSIONS
 
-# ROZDZIAL 7 - CONFIGURATION PERMISSIONS
+## 1. Weryfikacja typu pliku (ls -l)
 
-Rozpiska po ​ **LS -L** ​to pierwszy znak oznacza:
+Pierwszy znak w listowaniu `ls -l` określa typ zasobu:
+* `-` : regular file (zwykły plik)
+* `d` : directory (katalog)
+* `l` : symbolic link (dowiązanie symboliczne)
+* `b` : block device (urządzenie blokowe, np. dysk)
+* `c` : character device (urządzenie znakowe, np. tty)
 
-- regular file (-)
-- device (b)
-- symbolic link (l)
-- directory (d)
--
-Jak sie tworzy plik to user jest ownerem, a jego primary group jest wlascicielem grupowym.
-**find / -user username
-find / -group groupname**
-By zmienic ownera uzywamy ​ **CHOWN KTO DO_CZEGO** ​. To sie stosuje do plikow i katalogow,
-a by poszlo rekursywnie to surprise surprise leci flaga​ **-R** ​.
-**CHOWN** ​moze tez zmieniac grupe, ale wtedy trzeba przed nazwa grupy (bez spacji) wrzucic
-**KROPKE** ​lub ​ **DWUKROPEK** ​: ​ **chown :grupa plik_do_zmiany**
-Istnieje tez fajna skladnia ​ **CHOWN USER(.|:) GRUPA DO_CZEGO** ​ i wtedy ustawiamy od
-razu jedno i drugie
-Jednakze lepiej do tego stosowac ​ **CHGRP** ​bo to specyficzna komenda. Skladnia i flagi te same
-co w ​ **CHOWN** ​.
-By sie zorientowac jakie mamy grupy dajemy komende ​ **GROUPS** ​. Wtedy pokaze nasze. Jak dla
-roota to ​ **GROUPS USERNAME** ​. Na liscie grup pierwsza wymieniona jest PRIMARY. Da sie to
-zmienic ​ **DLA DANEJ SESSJI** ​ za pomoca komendy ​ **NEWGRP nazwa_grupy** ​. Trzeba byc
-czlonkiem grupy by ja przypisac jako primary. Chyba, ze grupa ma ustawione haslo (w
-**/etc/groups** ​ sie ustawia), albo komenda ​ **GPASSWD** ​bedac czlonkiem - wtedy nieczlonkowie
-zostana zapytani o haslo podczas proby zmiany.
-Permission | Applied to Files | Applied to Directories
-Read | Open a file | List contents of directory
-Write | Change contents of a file | Create and delete files and modify
-permissions on files
-Execute | Run a program file | Change to the directory (DEFAULT TO DIR)
+## 2. Właściciel, Grupa i Użytkownicy Systemowi
 
+Podczas tworzenia pliku jego właścicielem (owner) zostaje użytkownik, który go utworzył, a właścicielem grupowym – podstawowa (primary) grupa tego użytkownika.
 
-Do zmiany uprawnien uzywa sie komendy ​ **CHMOD UPRAWNIENIE DO_CZEGO** ​. W dwoch
-trybach:
-* liczbowy to podawanie po kolei cyfr dla usera/grupy/innych (​ **4 read, 2 write, 1 execute** ​)
-* relatywny to KTO(+|-)CO ​ **u+r** ​ dla read dla usera Jak sie nie wyspecyfikuje dla kogo to
-odbiera/dodaje wszystkim (lub prefix ​ **a od all** ​). Kolejne uprawnienia mozna oddzielac
-przecinkami.
-**chmod -R o+rX /data** ​ to X na koncu sprawia, ze to sie aplikuje tylko do folderow!!!
-Istnieja specjalne privilage:
-* ​ **SUID** ​(np. /usr/bin/passwd) -> ustawia sie u+s albo dajac prefix 4 - co oznacza, ze efektywny
-UID procesu, ktory ma dostep do pliku to UID ownera pliku. ​ **Nie da sie tego ustawic na
-skryptach!!!**
-* ​ **SGID** ​- stosowane do wspoldzielonych folderow - ustawia sie g+s lub 2
-* ​ **sticky bit** ​- aplikowane do folderow - majac write na folderze mozna tylko usunac pliki jesli jest
-sie ownerem pliku LUB jest sie ownerem folderu zawierajacego. Przy ​ **CHMOD** ​numerycznym
-prefix to​ **1!!!** ​ Dla relatywnego to ​ **CHMOD +t** ​ styka. Ten ‘t’ widac tez na koncu informacji o
-uprawnieniach do folderu, np: ​ **drw-r--r--t
-ACL** ​to zaawansowane dostepy do plikow/folderow. Generalnie problemy z tym sa dwa:
-* nie wszystkie narzedzia wspieraja ten temat (pisze, ze ​ **TAR** ​nie wspiera, ale wspiera z flaga
-**--acls** ​)
-* dysk moze nie byc zamontowany z obsluga tego. W​ **/etc/fstab** ​ powinno byc dodane​ **'acl
-mount'**
-Do ​ **ACLi** ​stosuje sie metode ​ **SETFACL** ​. Ustawia ona tematy. Zanim jednakze sie ja uzyje
-dobrze jest spojrzec sobie na plik/folder przez ​ **GETFACL** ​by zobaczyc co sie dzieje.​ **Komenda
-ll pokazuje ACLe jako plusik na koncu uprawnien.**
-Wyglada to tak: ​ **setfacl -m g:GRUPA:RELATIVEUPRAWNIENIA /dir** ​ - Flaga​ **-m** ​ to od
-**MODIFY** ​, reszta jest samoopisujaca.
-**setfacl -m g:AVENGERS:rw /home/dev/secretproject
-CO JEST ISTOTNE** ​. Powyzsza komenda ustawia zmiany dla ​ **ISTNIEJACYCH** ​obiektow. Jesli
-chcemy dorzucic dziedziczenie - czyli wszystkie nowe obiekty w folderze beda tez miec taki
-ACL trzeba dodac do uprawnien (po fladze ​ **-m** ​) prefix ​ **d:** ​ !!! Ten prefix to DEFAULT!
-**To jest bardzo istotne** ​. Powyzsze zatem wyglada tak:
-**setfacl -m d:g:GRUPA:RELATIVEUPRAWNIENIA /dir**
+> **Wskazówka `find`:** Aby szybko znaleźć pliki należące do konkretnego użytkownika lub grupy, użyj:
+> `find / -user nazwa_usera`
+> `find / -group nazwa_grupy`
 
+**Specjalni użytkownicy: `nobody` i `nogroup` (lub `nobody` w RHEL)**
+W systemie spotkasz się z uprawnieniami przypisanymi do użytkownika `nobody`. Jest to specjalne konto o najniższych możliwych uprawnieniach systemowych (często bez dostępu do powłoki i jakichkolwiek plików). Używa się go w celach bezpieczeństwa – demony i usługi sieciowe (np. serwery webowe, NFS) często uruchamiają procesy potomne jako `nobody`, aby w przypadku włamania atakujący zyskał minimalne prawa w systemie.
 
-Usuwanie ACLi jest proste:
-**setfacl -X g:GRUPA /dir** ​dla grupy/usera
-**setfacl -b /dir** ​usunie totalnie wszystko
-**setfacl -k /dir** ​usunie DOMYSLNY ACL (ustawiony za pomoca flagi -d)
-Mozna tez przepisac ACLe z jednego pliku/folderu na drugi:
-**getfacl COS | setfacl --set-file=- NA_CO**
-Istnieje cos takiego jak ​ **UMASK** ​. To sa domyslne ustawienia dla plikow i folderow stosowane do
-wszystkich userow. Niestety sa one troche inaczej robione niz w przypadku ​ **CHOWN** ​, ale dla
-plikow domyslnie jest ​ **666** ​po czym dla kazdej cyferki odejmujemy to co jest w UMASK i
-dostajemy wynik. Dla grup startujemy od ​ **777** ​.
-Dla wszystkich userow najlepiej dodac skrypt w​ **/etc/profile.d** ​ i w nim ustawic ​ **umask** ​. Jesli
-chcemy tylko dla konkretnego usera to najlepiej robic to w pliku ​ **.profile** ​ w folderze domowym
-konkretnego usera. Jesli walniesz komende ​ **UMASK** ​w konsoli to pokaze domyslna maske dla
-usera - ma tam 4 cyfry, a pierwsza to jest do sticky bitow i takich tam. ​ **UMASK 0** ​po prostu
-usunie maske. ​ **UMASK NIE JEST PERSYSTENTNE!!!**
-Sa tez '​ **EXTENDED FILE ATTRIBUTES** ​' ale opisuje to w ksiazce tak skrotowo i po lebkach, ze
-cos czuje, ze tutaj za duzo to nie ma.
-If you want to apply attributes, you can use the ​ **chattr** ​command. For example, use
-**chattr +s somefile** ​ to apply the attributes to somefile. Need to remove the attribute
-again? Then use ​ **chattr -s somefile** ​ and it will be removed. To get an overview of
-all attributes that are currently applied, use the ​ **lsattr** ​ command.
+### Zmiana właściciela i grupy (chown / chgrp)
+
+* **`chown KTO DO_CZEGO`** – Zmienia właściciela pliku/katalogu. Flaga `-R` robi to rekursywnie.
+* Zmiana właściciela i grupy jednocześnie: 
+  * `chown user:grupa plik` lub `chown user.grupa plik`
+* Zmiana samej grupy przez chown (wymaga dwukropka/kropki przed nazwą):
+  * `chown :nowagrupa plik`
+* **`chgrp GRUPA DO_CZEGO`** – Specjalizowana komenda wyłącznie do zmiany grupy (flagi takie same jak w chown).
+
+### Zarządzanie własnymi grupami
+
+* **`groups [USER]`** – Wyświetla grupy, do których należy użytkownik. Pierwsza na liście to grupa podstawowa (primary).
+* **`newgrp nazwa_grupy`** – Zmienia grupę podstawową **tylko dla trwającej sesji**. Zazwyczaj musisz być członkiem tej grupy, by ją przypisać. Jeśli nie jesteś członkiem, komenda zapyta o hasło (jeśli grupa ma nadane hasło przez `gpasswd`).
+
+---
+
+## 3. Uprawnienia (chmod)
+
+| Uprawnienie | Wartość | Działanie na PLIKU | Działanie na KATALOGU |
+| :--- | :--- | :--- | :--- |
+| **Read (r)** | 4 | Pozwala otworzyć i przeczytać plik. | Pozwala wylistować zawartość (np. `ls`). |
+| **Write (w)** | 2 | Pozwala zmieniać zawartość pliku. | Pozwala tworzyć, usuwać pliki i modyfikować ich atrybuty w tym katalogu. |
+| **Execute (x)** | 1 | Pozwala uruchomić plik (np. skrypt, binarkę). | Pozwala wejść do katalogu (np. `cd`). Domyślne i niezbędne dla katalogów! |
+
+Komenda **`chmod`** działa w dwóch trybach:
+
+**1. Tryb liczbowy (oktalny):**
+Podajemy sumę uprawnień dla Ownera/Grupy/Innych (Others).
+* `chmod 755 skrypt.sh` (Owner: rwx, Grupa: r-x, Others: r-x)
+* `chmod 644 notatka.txt` (Owner: rw-, Grupa: r--, Others: r--)
+
+**2. Tryb relatywny (KTO +|-|= CO):**
+* `u` (user), `g` (group), `o` (others), `a` (all)
+* `chmod u+x skrypt.sh` – Dodaje wykonywanie dla właściciela.
+* `chmod o-rwx plik` – Zabiera wszystkie prawa "innym".
+* `chmod a=r plik` – Ustawia tylko odczyt dla wszystkich.
+* `chmod -R o+rX /data` – Wielkie **`X`** jest bardzo przydatne! Nadaje prawo wykonywania (wejścia) tylko dla **katalogów** (nie psując przy tym zwykłych plików).
+
+---
+
+## 4. Uprawnienia Specjalne (SUID, SGID, Sticky Bit)
+
+Uprawnienia te manipulują domyślnym zachowaniem procesów i współdzielenia plików. Zapisuje się je jako czwartą (pierwszą od lewej) cyfrę w `chmod` liczbowym.
+
+* **SUID (Wartość: 4, Tryb relatywny: `u+s`)**
+  * **Zastosowanie:** Tylko pliki wykonywalne (binarki). **Nie działa na skryptach w systemie Linux!**
+  * **Jak działa:** Plik z tym bitem, po uruchomieniu przez dowolnego usera, wykonuje się z uprawnieniami **właściciela pliku**, a nie usera, który go odpalił. 
+  * **Przykład:** Komenda `/usr/bin/passwd` ma właściciela `root` i ustawiony SUID. Zwykły user może jej użyć, aby zmienić swoje hasło, co wymaga zapisu do `/etc/shadow` (do którego normalnie nie ma dostępu).
+  * **Widok w ls -l:** Zamiast `x` w sekcji właściciela pojawia się `s` (np. `-rwsr-xr-x`).
+
+* **SGID (Wartość: 2, Tryb relatywny: `g+s`)**
+  * **Zastosowanie:** Katalogi współdzielone (najczęstsze) lub pliki wykonywalne.
+  * **Jak działa (na katalogu):** Wymusza dziedziczenie grupy. Każdy nowy plik lub podkatalog utworzony wewnątrz, automatycznie przyjmie grupę katalogu nadrzędnego, a nie grupę domyślną twórcy. Idealne do folderów projektowych dla zespołów.
+  * **Widok w ls -l:** Zamiast `x` w sekcji grupy pojawia się `s` (np. `drwxrwsr-x`).
+
+* **Sticky Bit (Wartość: 1, Tryb relatywny: `+t`)**
+  * **Zastosowanie:** Katalogi z uprawnieniami do zapisu dla wszystkich (np. `/tmp`).
+  * **Jak działa:** Zabezpiecza przed usuwaniem cudzych plików. Nawet jeśli katalog ma prawa zapisu dla wszystkich (`chmod 777`), włączenie Sticky Bit sprawia, że plik może zostać usunięty **tylko** przez jego właściciela lub właściciela katalogu docelowego.
+  * **Widok w ls -l:** Na samym końcu uprawnień, w miejscu wykonywania dla `others`, pojawia się `t` (np. `drwxrwxrwt`).
+  * **Przykład nadania:** `chmod 1777 /wspoldzielony_katalog` lub `chmod +t /wspoldzielony_katalog`.
+
+---
+
+## 5. UMASK (Domyślna maska uprawnień)
+
+**UMASK** określa uprawnienia, które są **odejmowane** od domyślnych uprawnień maksymalnych przy tworzeniu nowych plików i katalogów.
+* Maksymalne uprawnienia dla nowego **katalogu to 777** (rwxrwxrwx).
+* Maksymalne uprawnienia dla nowego **pliku to 666** (rw-rw-rw-).
+
+**Matematyka umask (np. domyślny 022):**
+* Nowy plik: `666 - 022 = 644` (rw-r--r--)
+* Nowy katalog: `777 - 022 = 755` (rwxr-xr-x)
+
+> Wynik polecenia `umask` zwraca zazwyczaj 4 cyfry (np. `0022`). Pierwsza od lewej odpowiada za uprawnienia specjalne (SUID/SGID/Sticky bit). `umask 0` całkowicie zdejmuje restrykcje (niezalecane).
+
+**Ustawianie umask na stałe:**
+Uruchomienie `umask 027` w konsoli zmienia maskę tylko dla trwającej sesji. Aby zmiana była persystentna:
+1. **Dla konkretnego usera:** Dopisujemy linię `umask 027` do pliku `~/.bashrc` lub `~/.profile` w katalogu domowym.
+2. **Globalnie dla całego systemu:** Tworzymy dedykowany skrypt (np. `custom_umask.sh`) w katalogu `/etc/profile.d/` z zawartością `umask 022`.
+
+---
+
+## 6. ACL (Access Control Lists)
+
+ACL pozwala nadać granularne uprawnienia do pliku lub katalogu specyficznym użytkownikom i grupom (wykraczając poza klasyczną triadę owner/group/others).
+* **Wymagania:** System plików musi być zamontowany z obsługą ACL (opcja `acl` w `/etc/fstab` – w nowoczesnych systemach ext4/xfs jest to włączone domyślnie). Tar wspiera zachowanie uprawnień dzięki fladze `--acls`.
+
+### Jak rozpoznać użycie ACL?
+Jeśli na obiekcie ustawiono jakiekolwiek niestandardowe uprawnienia ACL, polecenie `ls -l` pokaże znak plusa **`+`** na samym końcu bloku uprawnień.
+* Przykład bez ACL: `-rw-r--r--.`
+* Przykład z ACL: `-rw-rwxr--+`
+
+### Zarządzanie ACL
+Do analizy uprawnień zawsze używamy **`getfacl NAZWA`**, ponieważ `ls -l` nie pokaże, kto dokładnie dostał te specjalne uprawnienia.
+
+Zarządzanie odbywa się poprzez **`setfacl`**:
+* **Ustawianie (Modify):** `setfacl -m u:user:uprawnienia plik` lub `setfacl -m g:grupa:uprawnienia plik`
+  * Przykład: `setfacl -m u:jankowalski:rwx tajny_plik.txt` (Jan Kowalski dostaje pełne prawa, choć nie jest właścicielem).
+  * Przykład: `setfacl -m g:avengers:rw /home/dev/project`
+* **Usuwanie ACL:**
+  * Usuń dla konkretnej grupy: `setfacl -x g:avengers /dir`
+  * Wyczyść wszystkie ACL całkowicie: `setfacl -b /dir`
+* **Dziedziczenie (Default ACL):** Aby uprawnienia działały nie tylko na obecny stan katalogu, ale wymuszały się na wszystkich **nowo** tworzonych plikach wewnątrz, stosujemy prefix **`d:`** (default):
+  * `setfacl -m d:g:avengers:rw /katalog_projektu` (teraz każdy nowy plik stworzony w tym folderze dostanie prawa rw dla grupy avengers).
+  * Usunięcie domyślnego ACL: `setfacl -k /dir`
+* **Kopiowanie ACL miedzy zasobami:**
+  * `getfacl plik_wzor | setfacl --set-file=- docelowy_plik`
+
+---
+
+## 7. Extended File Attributes (Rozszerzone Atrybuty)
+
+Oprócz klasycznych uprawnień istnieją atrybuty jądra, zarządzane przez system plików (np. ext4, xfs). Są to ograniczenia wkraczające ponad uprawnienia roota.
+* Weryfikacja: **`lsattr nazwa_pliku`**
+* Zmiana: **`chattr [OPCJA] nazwa_pliku`**
+
+**Kluczowe flagi atrybutów:**
+* **`+i` (Immutable):** Plik staje się całkowicie niezmienny. Nikt, **nawet root**, nie może go usunąć, zmienić jego nazwy, zmodyfikować zawartości ani zrobić do niego dowiązania. (Zdjęcie blokady: `chattr -i`).
+* **`+a` (Append only):** Plik można otworzyć tylko w trybie dopisywania (append). Używane często do zabezpieczania kluczowych plików logów – root może dopisywać zdarzenia, ale nie może zmodyfikować czy usunąć starych logów z pliku.
+
+######
+
 
 
 # ROZDZIAL 8 - SIECI
