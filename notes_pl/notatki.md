@@ -1,113 +1,220 @@
 [Resetowanie hasla roota w domkumencie](#resetowanie-hasla-roota-w-pizdu-wazne-masz-to-umiec-na)  
 [Resetowanie hasla roota](https://linuxconfig.org/redhat-8-recover-root-password)  
 
-# Rozdzial 2 - Essential tools
-
-Przekierowywanie ​ **>** ​ to po prostu pcha calosc do pliku. ​ **>>** ​ appenduje.  
-
-Redirecty moga tez byc laczone i sa wtedy ewaluowane od lewej do prawej.  
-
-SORT < JAKIS PLIK > DRUGI_PLIK_NA_OUTPUT   
-
-To sie powinno czytac tak:  
-(SORT < JAKIS PLIK) > DRUGI_PLIK_NA_OUTPUT
-By przekierowac i ​ **ERROR** ​i ​ **OUTPUT** ​do pliku to trzeba tak: ​ **COMMAND > output 2>&1** ​- to
-tak naprawde co robi to bierze ​ **STDERR** ​i przekierowuje do ​ **STDOUT** ​. A ze wczesniej zwykly
-**OUT** ​(przez operator ​ **>** ​) wrzucamy do pliku no to wszystko laduje w pliku.
-Przekierowanie od pipe rozni sie tym, ze przekierowanie wali lub czyta z pliku. Z kolei pipe robi
-tak, ze bierze ​ **STDOUT** ​z jednej komendy i pcha na ​ **STDIN** ​drugiej.
-Internal commands to: ​ **echo, printf, read, cd, pwd, cp, pushd, popd, dirs** ​.
-To find out if command is builtin use ​ **TYPE COMMAND**
-to checkout from where the command is taken use ​ **WHICH** ​command.
-**HISTORY** ​is a command to show history of commands. ​ **Ctrl+R** ​ enables searching FOR
-COMMAND ONLY and again pressing ​ **Ctrl+R** ​ searches next. ​ **!number** ​ executes command with
-given number. ​ **!text** ​ executes command starting with given text (NO CONFIRMATION)!!
-**History -c** ​ clears memory. ​ **History-w** ​ clears the contents of .bash_history
-The​ **~/.bash_profile** ​ would be used once, at login. The ​ **~/.bashrc** ​ script is read every time a
-shell is started. This is analogous to​ **/.cshrc** ​ for C Shell.
-One consequence is that stuff in​ **~/.bashrc** ​ should be as lightweight (minimal) as possible to
-reduce the overhead when starting a non-login shell.
-**/ETC/ISSUE** ​ is being shown before user is logged in. ​ **/ETC/MOTD** ​ is shown after.
 
 
-**APROPOS** ​is the same like ​ **man -k (** ​bardzo ogolne szukanie po keywordach, glownie jak sie
-nie pamieta komendy).​ **Man -f COMMAND** ​ shows short description.
-Man categories that are important are:
-1: Executable programs or shell commands
-5: File formats and conventions
-8: System administration commands
-Updating man database is command ​ **MANDB** ​but run as ​ **ROOT** ​. If run by normal user it starts
-but fails at the first attempt to clean files.
-**/usr/share/doc** ​ contains larger descriptions of systems (eg. ​ **bind/syslog** ​) where ​ **pinfo** ​allows
-to browse man pages with hyperlinks.
+# Resetowanie hasła roota w RHEL 10
+
+W systemach bazujących na RHEL 9 i 10 (z systemd i zaktualizowanym procesem bootowania) procedura wygląda następująco:
+
+1. Uruchom ponownie system. Gdy pojawi się menu GRUB, zatrzymaj odliczanie (np. strzałkami).
+2. Wciśnij `e` na wybranym wpisie kernela, aby go zedytować.
+3. Znajdź linię zaczynającą się od `linux` (lub `linuxefi` / `linux16`).
+4. Dopisz na samym końcu tej linii parametr: `rd.break`
+5. Wciśnij `Ctrl + X`, aby zbootować system z wprowadzonym parametrem. System zatrzyma się w powłoce awaryjnej (initramfs).
+6. Zamontuj główny system plików (sysroot) w trybie do odczytu i zapisu:
+```bash
+mount -o remount,rw /sysroot
+
+```
 
 
-# Rozdzial 3 - Mounting of directories
+7. Przejdź do właściwego systemu plików używając chroot:
+```bash
+chroot /sysroot
 
-**mount** ​command gives overview, it read ​ **/proc/mounts file** ​. It shows all.
-**findmnt** ​pokazuje to samo co ​ **mount** ​ale w fajnej drzewiastej formie i jest bardzo czytelne
-**df -Th** ​ pokazuje o wiele sensowniejszy output i skupia się na dyskach i filesystemach (flaga ​ **T** ​)
-INODY to identyfikatory miejsca na dysku gdzie sa skladowane dane. I kazdy plik jest tak
-naprawde linkiem do INODE. Kiedy usuwa sie ostatni link (czyli ‘plik’) to po prostu ten inode jest
-czyszczony. Oznacza to jednak, ze kiedy np. plik jest otwarty do edycji gdzies, a my go
-usuwamy, to dalej mozna robic edycje tego pliku, ale po zamknieciu edytora system sie kapnie,
-ze linki polecialy i wyczysci go.​ **VIM** ​przy edycji plikow tworzy w ogole nowy plik i po wyjsciu z
-niego podmienia INODY w pliku.
-
-## Listing files
-
-**LS** ​opcje:
-
-- ​ **l** ​ newline i wszystkie info
-- ​ **a** ​ ukryte
-- ​ **t** ​ sortuje po modification date
-- ​ **r** ​ (male r) reversuje order
-- ​ **R** ​ (duze R) wchodzi rekursywnie w podkatalogi
-- ​ **i** ​pokazuje identyfikator ​ **INODE**
-
-## Kopiowanie i podobne
-
-Kopiowanie rekursywne to flaga ​ **-R**
-flaga ​ **-a** ​ kopiuje rowniez permissiony
-kopiowanie calego folderu i jego sunfolderow to ​ **cp /KATALOG/**
-kopiowanie wszystkich plikow (ukrytych i normalnych) to ​ **CP -A /katalog/.** ​ (kropka na koncu)
-Usuwanie domyslnie propmtuje po zgode - flaga ​ **-f** ​ usuwa ten wymog
+```
 
 
-## Linki
+8. Zmień hasło roota:
+```bash
+passwd root
 
-### * HARD:
+```
 
-- ten sam device
-- nie da sie ich zrobic do folderow
-- jak usuniesz ostatni alias to i plik sie usuwa
-- ​ **RHEL 7** ​ Musisz byc ownerem sourca!!!
-*** SOFT (Symbolic)**
-- linkowac moga wszedzie
-- moga do folderow
-- jak sie target usunie to symbolic link jest bezuzyteczny
-**LN DOCELOWY_PLIK TWORZONY_LINK**
 
-## Kompresja
+9. Wymuś na systemie ponowne przypisanie kontekstów SELinux przy kolejnym uruchomieniu (niezbędne, w przeciwnym razie nie zalogujesz się):
+```bash
+touch /.autorelabel
 
-**TAR OPCJE (-CYFRA - poziom kompresji, im wiecej tym mocniej) DOCELOWY_PLIK
-CO_ARCHIWIZUJEMY**
+```
 
-- ​ **c** ​ crate
-- ​ **x** ​ extract (flaga -C po nazwie archiwum pozwala wskazac target folder). Podajac jako drugi
-paramer pelna nazwe pliku w archiwum extractuje sie tylko go
-- ​ **f** ​ nazwa pliku (musi byc ostatnia flaga)
-- ​ **v** ​to verbose
-- ​ **r** ​ dodanie pliku (plik skompresowany | co dodac)
-- ​ **u** ​ updatuje istniejacy w archiwum plik
-- ​ **z** ​ kompresja GZIPEm podczas tworzenia only
-- ​ **j** ​ kompreska BZIP2 podczas tworzenia only
-Z kolei przy GZIP lub BZIP2 to dajemy KOMENDA CO_DO_KOMPRESJI
-Rozpakowywanie to flaga ​ **-D** ​ (zakladam, ze od ​ **decompress** ​)
-Dla kompatybilnosci z Windowsem jest tez ​ **ZIP** ​i ​ **UNZIP (** ​nie sa domyslnie zainstalowane!!!)​**.**
-Uzycie jest dosc proste:
-**ZIP -R (recursive) FILE_NAME /CO_DO_ZROBIENIA
-UNZIP NAZWA_PLIKU**
+
+10. Wyjdź z chroota i powłoki awaryjnej:
+```bash
+exit
+exit
+
+```
+
+
+
+System zresetuje się (proces przeliczania etykiet SELinux może potrwać kilka minut) i uruchomi normalnie.
+
+---
+
+# Wyłączenie komunikatu Subscription Manager
+
+Menedżer pakietów domyślnie korzysta z wtyczki `subscription-manager`, która przy każdej akcji weryfikuje status rejestracji systemu. Aby używać lokalnych repozytoriów bez komunikatów o braku subskrypcji, należy tę wtyczkę wyłączyć.
+
+Otwórz plik konfiguracyjny (w RHEL 10 DNF korzysta z poniższych ścieżek):
+
+```bash
+vi /etc/dnf/plugins/subscription-manager.conf
+
+```
+
+Zmień parametr `enabled` z `1` na `0`:
+
+```ini
+[main]
+enabled=0
+
+```
+
+Zapisz plik. Od teraz `dnf` będzie pobierał dane wyłącznie z podpiętych, lokalnych repozytoriów bez ostrzeżeń ze strony Red Hata.
+
+---
+
+# Notatki: Narzędzia systemowe i administracja
+
+## Rozdział 2 - Essential tools
+
+### Przekierowania i potoki (Pipes)
+
+* `>` – Przekierowuje standardowe wyjście (STDOUT), nadpisując plik.
+* `>>` – Przekierowuje STDOUT, dopisując na koniec pliku (append).
+* `COMMAND > output 2>&1` – Przekierowuje zarówno STDOUT, jak i STDERR (błędy) do tego samego pliku (deskryptor błędów nr 2 jest kierowany tam, gdzie standardowe wyjście nr 1).
+* Przekierowania mogą być łączone i są ewaluowane od lewej do prawej:
+```bash
+sort < jakis_plik > drugi_plik_na_output
+
+```
+
+
+* **Różnica między przekierowaniem a potokiem (`|`)**: Przekierowanie pobiera lub zapisuje dane bezpośrednio do pliku. Pipe bierze wyjście (STDOUT) jednej komendy i pcha je bezpośrednio na wejście (STDIN) drugiej komendy.
+
+### Komendy wbudowane (Builtins) i weryfikacja plików
+
+* **Internal commands** (wbudowane w powłokę): `echo`, `printf`, `read`, `cd`, `pwd`, `pushd`, `popd`, `dirs`.
+* `type KOMENDA` – Pozwala sprawdzić, czy komenda jest wbudowana, czy zewnętrzna.
+* `which KOMENDA` – Wyświetla ścieżkę pliku binarnego danej komendy.
+
+### Historia (`history`)
+
+* `history` – Pokazuje historię wykonanych poleceń.
+* `Ctrl+R` – Wyszukuje po fragmencie tekstu. Ponowne wciśnięcie szuka kolejnego wystąpienia.
+* `!numer` – Wykonuje natychmiast komendę pod danym numerem z historii.
+* `!tekst` – Wykonuje natychmiast ostatnią komendę zaczynającą się od danego tekstu (UWAGA: brak potwierdzenia).
+* `history -c` – Czyści historię poleceń w pamięci podręcznej (aktualna sesja).
+* `history -w` – Zapisuje (lub nadpisuje, czyszcząc, jeśli użyto `-c`) plik `.bash_history`.
+
+### Skrypty logowania powłoki
+
+* `~/.bash_profile` – Wykonywany tylko raz, przy uruchamianiu powłoki logowania (login shell).
+* `~/.bashrc` – Czytany za każdym razem, gdy uruchamiana jest dowolna powłoka bash. Konfiguracja w nim powinna być możliwie "lekka", aby nie opóźniać startu skryptów i sub-shelli.
+* `/etc/issue` – Komunikat wyświetlany **przed** logowaniem użytkownika do systemu.
+* `/etc/motd` – (Message of the Day) Komunikat wyświetlany **po** pomyślnym zalogowaniu.
+
+### Pomoc systemowa (Man / Info)
+
+* `apropos KEYWORD` (lub `man -k`) – Przeszukuje ogólne opisy w podręczniku, przydatne, gdy nie pamiętasz dokładnej nazwy komendy.
+* `man -f KOMENDA` – Wyświetla skrócony opis komendy.
+* **Kluczowe kategorie Man:**
+* `1` - Programy i komendy powłoki.
+* `5` - Formaty plików i konwencje konfiguracji.
+* `8` - Komendy do administracji systemem.
+
+
+* `mandb` – Aktualizuje bazę manuali (Musi zostać wykonane jako ROOT, inaczej wywala błąd czyszczenia plików).
+* `/usr/share/doc` – Obszerna, dodatkowa dokumentacja pakietów (np. bind, syslog).
+* `pinfo` – Pozwala na przeglądanie stron manuali i info z użyciem nawigacji przypominającej hiperlinki.
+
+---
+
+## Rozdział 3 - Mounting of directories
+
+### Dyski i Inody
+
+* `mount` – Zwraca pełny wykaz zamontowanych zasobów, zaczytując dane z `/proc/mounts`.
+* `findmnt` – Działa podobnie jak `mount`, ale prezentuje dane w bardzo czytelnej formie drzewiastej.
+* `df -Th` – Weryfikuje dostępne miejsce. Flaga `-T` dodatkowo wyświetla kolumnę z typem systemu plików.
+* **Inody (Inodes)** – Unikalne identyfikatory fragmentów przestrzeni na dysku, gdzie faktycznie składowane są dane metadane. Pliki w systemie to tylko "linki" prowadzące do inoda.
+* Jeśli z danym inodem nie jest już powiązany żaden "plik" (licznik odwołań to zero), dane zostają nadpisane/zwolnione.
+* Jeśli skasujesz plik, który jest w danym momencie otwarty do edycji, program dalej może go zmieniać – inode zostanie zwolniony dopiero po zamknięciu procesu.
+* Edytory takie jak **VIM** podczas zapisu często zapisują zawartość do nowego inoda (pod nową nazwą), a po zamknięciu podmieniają inode oryginalnego pliku.
+
+
+
+### Operacje na plikach (Listowanie, kopiowanie, usuwanie)
+
+* Opcje polecenia `ls`:
+* `-l` – Długi format z informacjami o uprawnieniach, ownerze, rozmiarze.
+* `-a` – Wyświetla pliki ukryte (zaczynające się od kropki).
+* `-t` – Sortuje po dacie modyfikacji.
+* `-r` – Odwraca kolejność sortowania (reverse).
+* `-R` – Przeszukuje rekursywnie wszystkie podkatalogi.
+* `-i` – Pokazuje numery przypisanych inodów.
+
+
+* Kopiowanie:
+* `-R` – Flaga do kopiowania rekursywnego.
+* `-a` – Kopiuje zasoby zachowując dokładnie ich uprawnienia, czas modyfikacji itp.
+* `cp -r /KATALOG/ /CEL/` – Kopiuje katalog wraz z podkatalogami.
+* `cp -a /katalog/. /CEL/` – Kopiuje wszystkie pliki (w tym ukryte) – wymusza to dodanie kropki na końcu ścieżki źródłowej.
+
+
+* Opcje polecenia `rm`:
+* `-f` – (force) Usuwa pliki bez rzucania promptu o zgodę.
+
+
+
+### Linki
+
+Składnia: `ln [OPCJE] DOCELOWY_PLIK TWORZONY_LINK`
+
+* **Hard Links (Twarde):**
+* Fizycznie ten sam inod na tym samym urządzeniu blokowym.
+* Nie można tworzyć hard linków na innych partycjach.
+* Nie można ich podpiąć pod foldery.
+* Plik usunie się fizycznie z dysku dopiero, gdy usuniesz ostatni przypięty alias (ostatni hard link).
+* W systemach RHEL 7+ musisz być właścicielem docelowego pliku, aby utworzyć do niego hard link.
+
+
+* **Symbolic / Soft Links (Miękkie):**
+* Flaga `-s` dla polecenia `ln`.
+* Mogą linkować pliki pomiędzy partycjami.
+* Mają możliwość linkowania katalogów.
+* Jak usuniesz plik źródłowy/target, link symboliczny traci rację bytu (jest uszkodzony).
+
+
+
+### Kompresja i archiwizacja
+
+Składnia archiwizatora `tar`:
+`tar [OPCJE] DOCELOWY_PLIK CO_ARCHIWIZUJEMY`
+
+* Klawisze opcji `tar`:
+* `-c` – Create (tworzenie archiwum).
+* `-x` – Extract (rozpakowywanie). Podanie po pliku docelowym parametru z dokładną nazwą wypakuje tylko jeden specyficzny plik. Flaga `-C` ustala folder docelowy dla wypakowania.
+* `-f` – File, podanie nazwy pliku archiwum (zawsze powinna być podawana jako ostatnia w bloku, np. `-czf`).
+* `-v` – Verbose (lista procesowanych plików).
+* `-r` – Dodanie elementu do istniejącego (nieskompresowanego) archiwum.
+* `-u` – Update (zaktualizowanie modyfikowanych plików) w archiwum.
+* `-z` – Automatyczne przepuszczenie archiwum przez algorytm **GZIP** (tylko w momencie tworzenia/wypakowania).
+* `-j` – Automatyczne przepuszczenie archiwum przez algorytm **BZIP2** (tylko w momencie tworzenia/wypakowania).
+
+
+* Rozpakowywanie natywnymi formatami to domyślnie flaga `-d` (od decompress), np. `gzip -d`.
+* `zip` i `unzip`:
+* Narzędzia stworzone m.in. dla kompatybilności z systemami MS Windows. Domyślnie na RHEL często nie są zainstalowane.
+* Kompresja katalogu: `zip -r NAZWA_PLIKU.zip /CO_ZROBIC`
+* Dekompresja: `unzip NAZWA_PLIKU.zip`
+
+
+
+
+#######################
 
 
 ## Szukanie plikow
