@@ -1008,6 +1008,88 @@ Jesli chce sie zamienic kolejnosc resolvovania edytuje sie plik ​ **/ETC/NSSWI
 
 #############
 
+
+# ROZDZIAŁ 9 - MANAGING PROCESÓW
+
+W systemie Linux wyróżniamy dwa główne typy procesów:
+* **Shell jobs (procesy interaktywne)** – procesy powiązane z sesją powłoki, w której zostały uruchomione.
+* **Demony** – procesy tła uruchamiane najczęściej podczas startu systemu, zazwyczaj z uprawnieniami roota.
+
+Procesy mogą składać się z jednego lub wielu wątków (**threads**). Zarządzanie pojedynczymi wątkami leży po stronie kodu aplikacji i programisty; administrator zarządza całym procesem.
+
+W kontekście zarządzania wyróżniamy też:
+* **Procesy jądra (kernel processes)** – w wyniku polecenia `ps aux` ich nazwy wyświetlają się w nawiasach kwadratowych (`[...]`). Nie da się ich ubić ani zmienić ich priorytetu bez restartu systemu.
+* **Procesy użytkownika / systemowe** – standardowe procesy real-time i użytkownika.
+
+---
+
+## 1. Zarządzanie procesami w sesji powłoki (Job Control)
+
+Gdy uruchamiasz zadanie i wiesz, że zajmie ono dłuższą chwilę, możesz kontrolować jego bieg za pomocą klawiszy i poleceń:
+
+* **Uruchomienie w tle:** Dodanie `&` na końcu polecenia (np. `command &`) uruchamia proces bezpośrednio w tle. Kiedyś do utrzymania procesu w tle po zamknięciu powłoki stosowano `nohup`, obecnie procesy w tle są odizolowane przez sesję.
+* **Przeniesienie na pierwszy plan:** Komenda `fg` (foreground) przywraca zadanie z tła na pierwszy plan. Do `fg` i `bg` można przekazać numer porządkowy zadania (np. `fg 1`).
+* **Wstrzymanie procesu:** Skrót **`Ctrl + Z`** pauzuje bieżący proces i przenosi go do tła w stanie wstrzymanym.
+* **Wznowienie w tle:** Komenda `bg` (background) wznawia działanie wstrzymanego procesu w tle.
+* **Przerwanie procesu:** **`Ctrl + C`** wysyła sygnał przerwania (SIGINT) i usuwa proces z pamięci.
+* **Sygnał EOF:** **`Ctrl + D`** wysyła sygnał końca pliku / strumienia (EOF).
+* **Listowanie zadań:** Komenda **`jobs`** wyświetla listę wszystkich zadań powiązanych z bieżącą sesją shella.
+
+---
+
+## 2. Monitorowanie i listowanie procesów (`ps` oraz `pgrep`)
+
+Podstawowym narzędziem do podglądu procesów jest polecenie **`ps`**:
+* **Bez parametrów:** Pokazuje procesy powiązane z bieżącą sesją terminala aktualnego użytkownika.
+* **`aux`:** Wyświetla skrócone podsumowanie wszystkich aktywnych procesów w systemie (wszystkich użytkowników).
+* **`-ef`:** Pokazuje pełne informacje o procesach wraz z pełną ścieżką i argumentami wywołania polecenia.
+* **`f` (np. `-ef` lub `fax`):** Wyświetla hierarchię procesów (drzewo procesów).
+* **`-o`:** Pozwala precyzyjnie wyspecyfikować kolumny, jakie mają zostać wyświetlone.
+
+### Wyszukiwanie PID-ów (`pgrep`)
+Jeśli szukasz wyłącznie identyfikatorów procesów (PID) na podstawie nazwy:
+* `PGREP NAZWA` – zwraca czystą listę PID-ów (każdy w nowej linii).
+* `-l` – wyświetla nazwę procesu obok PID-u.
+* `-u USER` – ogranicza wyniki do procesów należącego do wskazanego użytkownika.
+* `-v` – odwraca wynik wyszukiwania (pokazuje wszystko, co **nie** spełnia warunku).
+
+---
+
+## 3. Priorytety procesów (`nice` i `renice`)
+
+Każdy proces startuje domyślnie z priorytetem (niceness) równym **0**. 
+* Skala priorytetów wynosi od **-20 do 19** (gdzie **-20** to najwyższy możliwy priorytet – proces najważniejszy dla systemu, a **19** to najniższy).
+* Wartość niceness jest widoczna w kolumnie **NI** np. w programie `top`.
+
+**Zasady modyfikacji:**
+* **`nice -n WARTOSC komenda`** – uruchamia nowy proces z ustaloną wartością niceness.
+* **`renice WARTOSC -p PID`** – zmienia priorytet działającego już procesu w czasie rzeczywistym.
+* **Uprawnienia:** Zwykły użytkownik może jedynie **zwiększać** wartość niceness (czyli obniżać priorytet procesów). Tylko `root` może nadawać procesom wyższe priorytety (wartości ujemne od -20).
+
+---
+
+## 4. Sygnały i zarządzanie ich wysyłaniem
+
+Sygnały to powiadomienia wysyłane do procesów w celu wymuszenia określonego zachowania. Można je wysyłać za pomocą komend `kill`, `pkill` lub `killall`.
+
+### Najważniejsze sygnały:
+* **`SIGTERM (15)`** – domyślny sygnał wysyłany przez `kill`. Grzecznie prosi proces o bezpieczne zakończenie pracy i zwolnienie zasobów.
+* **`SIGKILL (9)`** – natychmiastowo ubija proces na poziomie jądra systemu. Nie pozwala na zapisanie stanu (leczenie "poletka"), dlatego należy stosować go ostatecznie.
+* **`SIGHUP (1)`** – zawiesza i restartuje proces, co w przypadku większości demonów skutkuje **ponownym odczytaniem plików konfiguracyjnych**.
+* **`SIGSTOP (19)`** – zatrzymuje (pauzuje) proces w sposób uniemożliwiający zignorowanie sygnału.
+* **`SIGCONT (18)`** – wznawia działanie procesu zatrzymanego przez `SIGSTOP` lub `Ctrl+Z`.
+* **`SIGTSTP (20)`** – sygnał wstrzymania generowany terminalowo (odpowiednik `Ctrl+Z`).
+
+### Narzędzia do wysyłania sygnałów:
+* **`kill -l`** – wyświetla pełną listę dostępnych sygnałów w systemie.
+* **`kill PID`** – wysyła domyślny sygnał `SIGTERM` do wskazanego procesu.
+* **`kill -9 PID`** – wysyła sygnał `SIGKILL` (wymuszenie zamknięcia).
+* **`pkill NAZWA`** – wysyła sygnał (domyślnie `SIGTERM`) do procesów dopasowanych po nazwie.
+* **`killall NAZWA`** – wysyła sygnał do wszystkich procesów o dokładnie tej samej nazwie.
+
+
+###########
+
 # ROZDZIAL 9 - MANAGING PROCESSES
 
 Sa dwa typy procesow:
