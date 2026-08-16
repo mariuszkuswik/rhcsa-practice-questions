@@ -216,204 +216,523 @@ Składnia archiwizatora `tar`:
 
 #######################
 
+# Resetowanie hasła roota w RHEL 10
 
-## Szukanie plikow
+W systemach bazujących na RHEL 9 i 10 (z systemd i zaktualizowanym procesem bootowania) procedura wygląda następująco:
 
-Sluzy do tego oczywiscie komenda ​ **FIND** ​. Uzycie po kolei:
-**FIND GDZIE_SZUKAC -name REGEXP_Z_NAZWA_PLIKU**
-Dodatkowe flagi czy przelaczniki:
+1. Uruchom ponownie system. Gdy pojawi się menu GRUB, zatrzymaj odliczanie (np. strzałkami).
+2. Wciśnij `e` na wybranym wpisie kernela, aby go zedytować.
+3. Znajdź linię zaczynającą się od `linux` (lub `linuxefi` / `linux16`).
+4. Dopisz na samym końcu tej linii parametr: `rd.break`
+5. Wciśnij `Ctrl + X`, aby zbootować system z wprowadzonym parametrem. System zatrzyma się w powłoce awaryjnej (initramfs).
+6. Zamontuj główny system plików (sysroot) w trybie do odczytu i zapisu:
+```bash
+mount -o remount,rw /sysroot
 
-- ​ **type f/d/l** ​czy szukac plikow, folderow czy symlinkow
-**-user** ​NAME wlascicielem jest user (nazwa usera lub UID)
-Istnieje tez komenda ​ **LOCATE** ​, ktora jest o niebo szybsza niz ​ **FIND** ​ale to dlatego, że nie jedzie
-po dysku tylko korzysta z bazy danych, ktora jest raz dziennie odswiezana
-(​ **/ETC/CRON.DAILY/MLOCATE** ​). Mozna wymusic jej odswiezenie przez ​ **UPDATEDB -**
-domyslnie plik z baza danych lezy w ​ **/var/lib/mlocate/mlocate.db**
-
-
-# ROZDZIAL 4 - TEXT FILES
-
-### LESS
-
-G by isc do konca pliku (to samo co w VIMie)
-/costam by szukac (kolejne szukanie to klawisz n)
-?costam by szukac do tylu
-* ​ **CAT** ​zrzuca wszystko, by zrobic reverse ​ **CAT** ​komenda to ​ **TAC**
-* Domyslnie ​ **HEAD** ​i ​ **TAIL** ​pokazuja 10 rekordow. Ogranicznik to flaga ​ **-n** ​. No i niesmiertelna
-flaga ​ **-f** ​ ale glownie w tailu bo w headzie nie ma sensu.
-* Fajna komenda jest ​ **CUT** ​, ktora filtruje specyficzne pola wpierw je tnac po delimiterze. Zatem:
--d to flaga gdzie piszemy delimiter
--f to flaga z podaniem kolumny ktora chcemy dostac (liczymy od 1!!!)
-Zatem by wyciagnac nazyw userow z /etc/passwd robimy ​ **cut -d : -f 1 /etc/passwd**
-* do sortowania uzywamy o dziwo komendy ​ **SORT** ​. Domyslnie ona sortuje alfabetycznie.
-
-- flaga ​ **-n** ​ bedzie sortowac numerycznie
-- ​ **r** ​ reversuje sortowanie
-**-t** ​tez pozwala dac templejt do sortowania i laczy sie to z​ **-kX** ​ gdzie X to numer kolumny (tez
-startuje od 1!!!)
-**sort -k3 -t : /etc/passwd → to sortuje ten plik po 3 kolumnie, rozdzielonych :**
-* liczenie czegokolwiek to komenda ​ **WC** ​(word count) - linie slowa znaki
-* ​ **GREP** ​ma mase ciekawych opcji (ogolnie ​ **GREP** ​jest case sensivitve!!!):
-**-i** ​ pomija upper/lower
-**-v** ​ pokazuje to co NIE ZAWIERA danego wyrazenia
-**-r** ​ szuka rekursywnie
-**-w** ​ szuka stringa tylko kiedy jest oddzielnym slowem (czyli w : ‘testchlebik’ szukajac ‘chlebik’ bez
-tej flagi to go znajdzie, ale z flaga juz nie)
-**-e** ​ uzywane jak sie szuka linii dla kilku patternow: ​ **grep -e 'nologin' -e 'root' /etc/passwd
--A** ​ lub ​ **-B** ​ pokazuje iles linii PO (After) i PRZED (Before) dopasowaniu: grep chlebik /etc/passwd
-**GREP OPCJE CZEGO_SZUKAMY GDZIE_SZUKAMY**
+```
 
 
-# ROZDZIAL 5 - LOGOWANIE DO SYSTEMU
+7. Przejdź do właściwego systemu plików używając chroot:
+```bash
+chroot /sysroot
 
-Generalnie istnieja wirtualne terminale - otwierane ​ **Alt+F1-F6** ​ lub za pomoca polecenia ​ **chvt X**
-gdzie X to numer terminala.
-Jesli sie to robi z graficznego to czesto ​ **Alt+F1** ​ czy costam jest zajete. Wtedy uzywaj
-**Alt+Ctrl+F2** ​ i tak dalej
-**tty1-tty6** ​ to virtualne terminale. Z kolei ​ **pts1-6** ​ to 'pseudo-terminale', ktore moga byc odpalane z
-GUI.
-Komenda ​ **ssh** ​ma kilka flag:
-
-- ​ **l** ​Do wyspecyfikowani nazwy usera, ale najczesciej idzie user@host
-- ​ **i** ​Podaje lokalizacje pliku z kluczem prywatym ktory ma byc uzyty (normalnie bierze
-**~/.ssh/id_rsa**
-- ​ **F** ​ Podajemy plik konfiguracyjny dla polaczenia (domyslnie ​ **~/.ssh/config** ​)
-**SSH** ​ma plik konfiguracyjny dla kazdego usera oddzielny, ale istnieje tez ogolny dla wszystkich
-w ​ **/ETC/SSH/SSH_CONFIG
-ssh -X** ​ to wywolanie ze strony klienta do docelowego serwera z prosba o uruchamianie
-aplikacji GUI. By to jednak dzialalo trzeba jeszcze jako ROOT dac flage w konfigu demona -
-**/etc/ssh/ssh_config** ​ i ustawic ​ **Forward X11 yes**
-Komenda ​ **WHO** ​ lub ​ **W** ​ pokazuje wszystkich obecnie zalogowanych do systemu
-**SSH-KEYGEN** ​ generuje pare kluczy, a z kolei ​ **SSH-COPY-ID** ​kopiuje publiczny na remote
-serwer
-**scp /etc/hosts server2:/tmp** ​ wysyla plik hosts z obecnej maszyny do server2/tmp
-**scp root@server2:/etc/passwd ~** ​ login jako root do server2 i sciagniecie stamtad pliku z
-haslami do katalogu domowego
-**scp -r server2:/etc/ /tmp** ​ podobnie tylko nie jako root i ciagniemy caly folder rekursywnie
-**SCP** ​uzywa ​ **-P** ​ (wielka litera) do wyspecyfikowania portu
+```
 
 
-# ROZDZIAL 6 - USER AND GROUP MANAGEMENT
+8. Zmień hasło roota:
+```bash
+passwd root
 
-**ROOT** ​ma dostep do wszystkiego. Nie ma czegos takiego jak 'ROOT bez praw dostepu' czy cos
-takiego.
-Komenda by pokazac info o userze to​ **ID USERNAME** ​ (lub samo ​ **ID** ​by pokazac siebie)
-Inna komenda jest ​ **GETENT (database) USERNAME** ​co pozwala pociagnac informacje np. z
-LDAPa. Lista ​ **database** ​jest dosc dluga.
-**SU** ​domyslnie otwiera subshell dla ​ **ROOTA** ​.
-Oczywiscie to ​ **SU** ​- to nam otworzy ROOTA, jak chcemy dostac sie jako inny user to ​ **SU -
-USERNAME** ​.
-Istnieja 2 typy shella - ​ **LOGIN SHELL** ​i ​ **INTERACTIVE SHELL.** ​Roznia sie przede wszystkim
-plikami, ktore sie uruchomia (konfigi z folderu domowego .bash_). Dla ​ **INTERACTIVE** ​to jest
-**bashrc** ​a dla ​ **LOGIN .bash_profile** ​. Wiec jak sie chce miec przeprocesowane skrypty dla obu
-shelli to jedziemy ​ **SU -** ​. Dla kazdej ​ **LOGIN SHELL** ​przy wylogowaniu jest tez procesowany
-**.bash_logout** ​.
-Ciekawa opcja z ​ **SU** ​jest JEDNORAZOWE wykonanie jakiejs komendy jako inny user, a nie
-otwieranie shella. Przyklad to: ​ **SU -C ‘komenda do wykonania’ NAZWA_USERA** ​(dla ROOTa
-mozna to pominac)
-Komenda do modyfikowania usera to ​ **USERMOD** ​. Najpopularniejszym przykladem jest
-dodawanie usera do grupy - ​ **USERMOD -aG GROUPNAME USER** ​. Grupa ​ **WHEEL** ​na
-RHEL/CENTOS to domyslna grupa sudoersow. Flagi w uzyciu to tez ​ **L** ​oraz ​ **U** ​(lock i unlock), ​ **c**
-do dodawania komentarza do ​ **/etc/passwd** ​. Na sam koniec jest ​ **-d** ​do zmiany folderu
-domowego usera (najczesciej z flaga ​ **-m** ​ktora przekopiuje zawartosc istniejacego folderu).
-Jest cala gama komend w oparciu o VI, ktore pozwalaja bezposrednio edytowac pliki konfigu -
-**VISUDO** ​ (/etc/sudoers), ​ **VIGR** ​(/etc/group), ​ **VIPW** ​(/etc/passwd). ​ **VIPW -s** ​ edytuje /etc/shadow.
-UZYWANIE TEGO JEST BARDZO NIEZALECANE BO NIE MA SPRAWDZANIA SKLADNI I
-MOZNA W OGOLE ZJEBAC CALY SYSTEM!!!
-Zmiana hasla to ​ **PASSWD USERNAME** ​ - oczywiscie bez nazwy usera by zmienic haslo
-obecnego usera. ​ **PASSWD -l** ​ lockuje zmiane hasla. ​ **PASSWD -u** ​ Odblokowuje.
-PASSWD potrafi zmieniac ustawienia dla hasla:
-* ​ **-n** ​ jak dlugo MINIMUM haslo obowiazuje
-* ​ **-w** ​ na ile dni wczesniej pokazac warning
+```
 
 
-* ​ **-x** ​ kiedy expiruje
-Druga komenda jest ​ **CHAGE** ​z podobnymi parametrami (​ **ale roznymi jednak!!!** ​), a
-najwazniejszym jest flaga ​ **-l** ​ ktora pokazuje po prostu informacje o hasle usera.
-**USERADD USERNAME** ​ oczywiscie dodaje usera. Podczas tworzenia usera przydaja sie takie
-flagi:
-* -m tworzy folder domowy. Jak on wyglada (jego szkielet) jest brany z​ **/ETC/SKEL** ​ (to jest
-folder z plikami)
-* ​ **-u** ​ nadaje recznie UID (jak juz zajety to wywali blad)
-* ​ **-G** ​ grup1,grup2 dodaje usera do wskazanych grup
-Podczas tworzenia usera sa uzywane domyslne pliki, z ktorych bierze sie dane. Sa to
-**/ETC/LOGIN.DEFS** ​:
-* ​ **MOTD_FILE**
-* ​ **ENV_PATH** ​ - definiuje $PATH
-* ​ **PASS_*** ​ trzy zmienne z info o hasle (expiration i takie tam)
-* ​ **UID_MIN** ​ minimalny start zakresu dla nadawania UIDa userom
-* ​ **CREATE_HOME** ​ boolean
-* ​ **USERGROUPS_ENAB boolean** ​ - czy ma tworzyc primary grupe taka sama jak nazwa usera
-oraz​ **/ETC/DEFAULT/USERADD** ​ (domyslna konsola, home katalog, skel, czy tworzyc folder
-mejlowy i kilka innych).
-**USERDEL USERNAME** ​ usuwa. Z flaga ​ **-r** ​ usuwa tez jego environment (katalog domowy, mejle)
-**USERMOD** ​modyfikuje uzytkownika rzecz jasna. Aczkolwiek do zmiany hasla to jak juz bylo
-pisane - ​ **PASSWD** ​.
-**GROUPADD** ​dodaje grupe. Z w sumie jedynej sensownej flagi to​ **-g** ​ pozwala ustawic GUID
-recznie.
-**GROUPMOD** ​pozwala edytowac grupe. Mozna zmienic nazwe czy GUID, ale nie da sie
-zmieniac przynaleznosci userow. To sie robi per user komenda ​ **USERMOD (-aG)** ​, usuniecie
-usera z grupy to jak mowi internet najlepiej ​ **VIGRem** ​ogarnac.
-**GROUPMEMS -g NAZWAGRUPY -l** ​ pozwala wylistowac wszystkich czlonkow danej grupy
-**/ETC/PASSWD** ​ - po kolei kolumny to:
-* username
-* pasword (nie uzywane juz)
-* UID - serwisowi liczeni do 999 (0 to ROOT), od 1000 domyslnie leca normalni userzy. Zakresy
-sa definiowane w​ **/ETC/LOGIN.DEFS**
-* GID - identyfikator primary grupy usera
+9. Wymuś na systemie ponowne przypisanie kontekstów SELinux przy kolejnym uruchomieniu (niezbędne, w przeciwnym razie nie zalogujesz się):
+```bash
+touch /.autorelabel
+
+```
 
 
-* komentarz (​ **GECOS** ​ field)
-* directory - katalog domowy usera
-* shell - z mozliwoscia /sbin/nologin (/etc/nologin.txt by pokazac komunikat takim userom przy
-probie zalogowania)
-**/ETC/SHADOW**
-* login name
-* zakodowanie haslo
-* dni od epoch kiedy ostatnio bylo zmieniane haslo
-* dni zanim haslo moze byc zmienione (ustawiane domyslnie na 0)
-* za ile dni haslo musi byc zmienione
-* ile dni przed wygasnieciem user dostaje ostrzezenie
-* ile dni po wygasnieciu hasla konto jest blokowane
-* ile dni od epoch haslo zostalo zablokowane (lepiej blokowac usera niz usuwac)
-* pole zarezerwowane, ktore jednak nigdy nie zostalo uzyte
-**/ETC/GROUP**
-* nazwa grupy
-* password grupy (uzywane bardzo rzadko - do tymczasowego dania uprawnienen do plikow)
-* group id
-* members
-To construct the user environment, a few files play a role:
-■ /etc/profile: Used for default settings for all users when starting a login shell
-■ /etc/bashrc: Used to define defaults for all users when starting a subshell
-■ ~/.profile: Specific settings for one user applied when starting a login shell
-■ ~/.bashrc: Specific settings for one user applied when starting a subshell
-LDAP jest hierarchiczny, distributed i replicated.
-Narzedzia uzywane:
-* ​ **authconfig** ​: A command-line utility in which you have to specify all you want
-to do by using command-line options
-* ​ **authconfig-tui** ​(DEPRECATED) - uzywa ​ **NSCLD** ​(​ **/etc/nslcd.conf** ​) jako backend: A
-menu-driven text user interface that allows you to select options to be used from a list. Use of
-this utility is recommended
-*​ **authconfig-gtk** ​ - uzwa ​ **SSSD** ​jako backend: A utility with a GUI, which for that reason can be
-used from a GUI environment only
+10. Wyjdź z chroota i powłoki awaryjnej:
+```bash
+exit
+exit
+
+```
 
 
-Laczenie sie ​ **SSSD** ​do ​ **FreeIPA** ​:
-**yum install sssd sssd-client
-authconfig --enablemkhomedir --enableldap --enableldapauth
---ldapserver="192.168.56.104" --ldapbasedn="dc=example2,dc=pl" --update
-scp chlebik@192.168.56.104:/var/ftp/pub/cacert.p12 /etc/openldap/cacerts/cacert.p
-authconfig --enableldaptls --update**
-Z TEGO CO WYNIKA TO RAPTEM NSLCD rozni sie tylko tym, ze instaluje sie:
-**yum install -y openldap-clients nss-pam-ldapd**
-A potem zmienia SELinuxa
-**restorecon /etc/openldap/cacerts/cert.pem --> nazwa certyfikatu byla inna**
-Linux Academy z kolei poleca inna rzecz - ​ **REALMD** ​ co jest z automatu zaszyte w CENTOS7.
-Walimy (​ **REALM LIST** ​)
-**REALM DISCOVER AD_SERVER
-REALM_JOIN AD_SERVER**
-I teraz mozna sie polaczyc z innym serwerem po SSH uzywajac skladni:
-**SSH -l user@serwer ADRES_SERWERA_AD**
+
+System zresetuje się (proces przeliczania etykiet SELinux może potrwać kilka minut) i uruchomi normalnie.
+
+---
+
+# Wyłączenie komunikatu Subscription Manager
+
+Menedżer pakietów domyślnie korzysta z wtyczki `subscription-manager`, która przy każdej akcji weryfikuje status rejestracji systemu. Aby używać lokalnych repozytoriów bez komunikatów o braku subskrypcji, należy tę wtyczkę wyłączyć.
+
+Otwórz plik konfiguracyjny (w RHEL 10 DNF korzysta z poniższych ścieżek):
+
+```bash
+vi /etc/dnf/plugins/subscription-manager.conf
+
+```
+
+Zmień parametr `enabled` z `1` na `0`:
+
+```ini
+[main]
+enabled=0
+
+```
+
+Zapisz plik. Od teraz `dnf` będzie pobierał dane wyłącznie z podpiętych, lokalnych repozytoriów bez ostrzeżeń ze strony Red Hata.
+
+---
+
+# ROZDZIAŁ 2 - Essential tools
+
+### Przekierowania i potoki (Pipes)
+
+* `>` – Przekierowuje standardowe wyjście (STDOUT), nadpisując plik.
+* `>>` – Przekierowuje STDOUT, dopisując na koniec pliku (append).
+* `COMMAND > output 2>&1` – Przekierowuje zarówno STDOUT, jak i STDERR (błędy) do tego samego pliku (deskryptor błędów nr 2 jest kierowany tam, gdzie standardowe wyjście nr 1).
+* Przekierowania mogą być łączone i są ewaluowane od lewej do prawej:
+```bash
+sort < jakis_plik > drugi_plik_na_output
+
+```
+
+
+* **Różnica między przekierowaniem a potokiem (`|`)**: Przekierowanie pobiera lub zapisuje dane bezpośrednio do pliku. Pipe bierze wyjście (STDOUT) jednej komendy i pcha je bezpośrednio na wejście (STDIN) drugiej komendy.
+
+### Komendy wbudowane (Builtins) i weryfikacja plików
+
+* **Internal commands** (wbudowane w powłokę): `echo`, `printf`, `read`, `cd`, `pwd`, `pushd`, `popd`, `dirs`.
+* `type KOMENDA` – Pozwala sprawdzić, czy komenda jest wbudowana, czy zewnętrzna.
+* `which KOMENDA` – Wyświetla ścieżkę pliku binarnego danej komendy.
+
+### Historia (`history`)
+
+* `history` – Pokazuje historię wykonanych poleceń.
+* `Ctrl+R` – Wyszukuje po fragmencie tekstu. Ponowne wciśnięcie szuka kolejnego wystąpienia.
+* `!numer` – Wykonuje natychmiast komendę pod danym numerem z historii.
+* `!tekst` – Wykonuje natychmiast ostatnią komendę zaczynającą się od danego tekstu (UWAGA: brak potwierdzenia).
+* `history -c` – Czyści historię poleceń w pamięci podręcznej (aktualna sesja).
+* `history -w` – Zapisuje (lub nadpisuje, czyszcząc, jeśli użyto `-c`) plik `.bash_history`.
+
+### Skrypty logowania powłoki
+
+* `~/.bash_profile` – Wykonywany tylko raz, przy uruchamianiu powłoki logowania (login shell).
+* `~/.bashrc` – Czytany za każdym razem, gdy uruchamiana jest dowolna powłoka bash. Konfiguracja w nim powinna być możliwie "lekka", aby nie opóźniać startu skryptów i sub-shelli.
+* `/etc/issue` – Komunikat wyświetlany **przed** logowaniem użytkownika do systemu.
+* `/etc/motd` – (Message of the Day) Komunikat wyświetlany **po** pomyślnym zalogowaniu.
+
+### Pomoc systemowa (Man / Info)
+
+* `apropos KEYWORD` (lub `man -k`) – Przeszukuje ogólne opisy w podręczniku, przydatne, gdy nie pamiętasz dokładnej nazwy komendy.
+* `man -f KOMENDA` – Wyświetla skrócony opis komendy.
+* **Kluczowe kategorie Man:**
+* `1` - Programy i komendy powłoki.
+* `5` - Formaty plików i konwencje konfiguracji.
+* `8` - Komendy do administracji systemem.
+
+
+* `mandb` – Aktualizuje bazę manuali (Musi zostać wykonane jako ROOT, inaczej wywala błąd czyszczenia plików).
+* `/usr/share/doc` – Obszerna, dodatkowa dokumentacja pakietów (np. bind, syslog).
+* `pinfo` – Pozwala na przeglądanie stron manuali i info z użyciem nawigacji przypominającej hiperlinki.
+
+---
+
+# ROZDZIAŁ 3 - Mounting of directories
+
+### Dyski i Inody
+
+* `mount` – Zwraca pełny wykaz zamontowanych zasobów, zaczytując dane z `/proc/mounts`.
+* `findmnt` – Działa podobnie jak `mount`, ale prezentuje dane w bardzo czytelnej formie drzewiastej.
+* `df -Th` – Weryfikuje dostępne miejsce. Flaga `-T` dodatkowo wyświetla kolumnę z typem systemu plików.
+* **Inody (Inodes)** – Unikalne identyfikatory fragmentów przestrzeni na dysku, gdzie faktycznie składowane są dane metadane. Pliki w systemie to tylko "linki" prowadzące do inoda.
+* Jeśli z danym inodem nie jest już powiązany żaden "plik" (licznik odwołań to zero), dane zostają nadpisane/zwolnione.
+* Jeśli skasujesz plik, który jest w danym momencie otwarty do edycji, program dalej może go zmieniać – inode zostanie zwolniony dopiero po zamknięciu procesu.
+* Edytory takie jak **VIM** podczas zapisu często zapisują zawartość do nowego inoda (pod nową nazwą), a po zamknięciu podmieniają inode oryginalnego pliku.
+
+
+
+### Operacje na plikach (Listowanie, kopiowanie, usuwanie)
+
+* Opcje polecenia `ls`:
+* `-l` – Długi format z informacjami o uprawnieniach, ownerze, rozmiarze.
+* `-a` – Wyświetla pliki ukryte (zaczynające się od kropki).
+* `-t` – Sortuje po dacie modyfikacji.
+* `-r` – Odwraca kolejność sortowania (reverse).
+* `-R` – Przeszukuje rekursywnie wszystkie podkatalogi.
+* `-i` – Pokazuje numery przypisanych inodów.
+
+
+* Kopiowanie:
+* `-R` – Flaga do kopiowania rekursywnego.
+* `-a` – Kopiuje zasoby zachowując dokładnie ich uprawnienia, czas modyfikacji itp.
+* `cp -r /KATALOG/ /CEL/` – Kopiuje katalog wraz z podkatalogami.
+* `cp -a /katalog/. /CEL/` – Kopiuje wszystkie pliki (w tym ukryte) – wymusza to dodanie kropki na końcu ścieżki źródłowej.
+
+
+* Opcje polecenia `rm`:
+* `-f` – (force) Usuwa pliki bez rzucania promptu o zgodę.
+
+
+
+### Linki
+
+Składnia: `ln [OPCJE] DOCELOWY_PLIK TWORZONY_LINK`
+
+* **Hard Links (Twarde):**
+* Fizycznie ten sam inod na tym samym urządzeniu blokowym.
+* Nie można tworzyć hard linków na innych partycjach.
+* Nie można ich podpiąć pod foldery.
+* Plik usunie się fizycznie z dysku dopiero, gdy usuniesz ostatni przypięty alias (ostatni hard link).
+* W systemach RHEL 7+ musisz być właścicielem docelowego pliku, aby utworzyć do niego hard link.
+
+
+* **Symbolic / Soft Links (Miękkie):**
+* Flaga `-s` dla polecenia `ln`.
+* Mogą linkować pliki pomiędzy partycjami.
+* Mają możliwość linkowania katalogów.
+* Jak usuniesz plik źródłowy/target, link symboliczny traci rację bytu (jest uszkodzony).
+
+
+
+### Kompresja i archiwizacja
+
+Składnia archiwizatora `tar`:
+`tar [OPCJE] DOCELOWY_PLIK CO_ARCHIWIZUJEMY`
+
+* Klawisze opcji `tar`:
+* `-c` – Create (tworzenie archiwum).
+* `-x` – Extract (rozpakowywanie). Podanie po pliku docelowym parametru z dokładną nazwą wypakuje tylko jeden specyficzny plik. Flaga `-C` ustala folder docelowy dla wypakowania.
+* `-f` – File, podanie nazwy pliku archiwum (zawsze powinna być podawana jako ostatnia w bloku, np. `-czf`).
+* `-v` – Verbose (lista procesowanych plików).
+* `-r` – Dodanie elementu do istniejącego (nieskompresowanego) archiwum.
+* `-u` – Update (zaktualizowanie modyfikowanych plików) w archiwum.
+* `-z` – Automatyczne przepuszczenie archiwum przez algorytm **GZIP** (tylko w momencie tworzenia/wypakowania).
+* `-j` – Automatyczne przepuszczenie archiwum przez algorytm **BZIP2** (tylko w momencie tworzenia/wypakowania).
+
+
+* Rozpakowywanie natywnymi formatami to domyślnie flaga `-d` (od decompress), np. `gzip -d`.
+* `zip` i `unzip`:
+* Narzędzia stworzone m.in. dla kompatybilności z systemami MS Windows. Domyślnie na RHEL często nie są zainstalowane.
+* Kompresja katalogu: `zip -r NAZWA_PLIKU.zip /CO_ZROBIC`
+* Dekompresja: `unzip NAZWA_PLIKU.zip`
+
+
+
+---
+
+# Wyszukiwanie plików
+
+Do zaawansowanego wyszukiwania służy polecenie `find`. Działa rekursywnie i przeszukuje strukturę katalogów w czasie rzeczywistym.
+
+**Składnia:**
+`find [ŚCIEŻKA] [OPCJE] [AKCJE]`
+
+**Podstawowe kryteria:**
+
+* `-name PATTERN` – Szuka po nazwie pliku (obsługuje wyrażenia regularne i wildcardy).
+* `-iname PATTERN` – Szuka po nazwie, ignorując wielkość liter (case-insensitive).
+* `-type f/d/l` – Szuka konkretnego typu zasobu: `f` (plik), `d` (katalog), `l` (symlink).
+
+**Wyszukiwanie po uprawnieniach i właścicielu:**
+
+* `-user NAZWA_LUB_UID` – Pliki należące do konkretnego użytkownika.
+* `-group NAZWA_LUB_GID` – Pliki należące do konkretnej grupy.
+* `-perm TRYB` – Szuka po uprawnieniach.
+* `-perm 644` – Dokładnie takie uprawnienia.
+* `-perm -644` – Przynajmniej takie uprawnienia (może mieć więcej).
+* `-perm /644` – Dowolny z bitów dopasowany.
+
+
+* **Bity specjalne (SUID, SGID, Sticky Bit):**
+* `-perm /4000` – Pliki z ustawionym bitem SUID (wykonanie z prawami właściciela).
+* `-perm /2000` – Pliki z ustawionym bitem SGID (np. dziedziczenie grupy w katalogu).
+* `-perm /1000` – Pliki z ustawionym Sticky Bit (np. `/tmp`, tylko właściciel może usunąć swój plik).
+
+
+
+**Wyszukiwanie po czasie (modyfikacja i dostęp):**
+
+* `-mtime N` – Czas modyfikacji zawartości pliku w dniach (N dni temu). `-mtime -N` (mniej niż N dni), `-mtime +N` (więcej niż N dni).
+* `-mmin N` – Czas modyfikacji w minutach.
+* `-atime N` / `-amin N` – Czas ostatniego dostępu (odczytu) do pliku.
+* `-ctime N` / `-cmin N` – Czas zmiany metadanych (np. uprawnień, inoda).
+
+**Akcje wykonywane na znalezionych plikach:**
+
+* `-exec KOMENDA {} \;` – Wykonuje komendę na każdym znalezionym pliku (np. `find / -name "*.tmp" -exec rm -f {} \;`).
+* `-delete` – Szybkie usuwanie znalezionych plików (zastępuje `-exec rm`).
+
+### Locate
+
+`locate` jest znacznie szybsze niż `find`, ponieważ nie odpytuje dysku, a jedynie przeszukuje bazę danych indeksu.
+
+* Baza odświeżana jest raz dziennie cronem: `/etc/cron.daily/mlocate`.
+* Domyślna ścieżka bazy: `/var/lib/mlocate/mlocate.db`.
+* Odświeżenie bazy na żądanie: `updatedb`.
+
+---
+
+# ROZDZIAŁ 4 - TEXT FILES
+
+### Przeglądanie zawartości
+
+* `less` – Pager do przeglądania plików bez wczytywania całości do pamięci.
+* `G` – Skok na koniec pliku.
+* `g` – Skok na początek pliku.
+* `/fraza` – Wyszukiwanie w dół (klawisz `n` szuka kolejnego, `N` poprzedniego wystąpienia).
+* `?fraza` – Wyszukiwanie w górę.
+
+
+* `cat` – Wypisuje całą zawartość na STDOUT.
+* `tac` – Odwrócony `cat`, wypisuje linie od dołu do góry.
+* `head` / `tail` – Wypisują początek / koniec pliku. Domyślnie 10 linii. Ogranicznik: `-n NUMER`. Flaga `-f` w tail śledzi zmiany w pliku na żywo (przydatne do logów).
+
+### VIM – Podstawy
+
+Wielotrybowy edytor tekstowy, używany powszechnie na serwerach z racji swojej lekkości i braku zależności od GUI.
+
+* **Tryb normalny (Command Mode):** Domyślny po otwarciu. Klawisze to komendy (np. `dd` usuwa linię, `yy` kopiuje linię, `p` wkleja, `u` cofa zmianę).
+* **Tryb wstawiania (Insert Mode):** Wchodzi się wciskając `i` (insert) lub `a` (append). Służy do pisania. Wyjście do trybu normalnego przez `ESC`.
+* **Tryb poleceń (Command-line Mode):** Otwierany dwukropkiem `:` w trybie normalnym.
+* `:wq` lub `:x` – Zapisz i wyjdź.
+* `:q!` – Wyjdź odrzucając zmiany.
+
+
+
+### Strumieniowe przetwarzanie i modyfikacja tekstu
+
+* **tr (Translate)** – Służy do zamiany lub usuwania pojedynczych znaków (czyta ze STDIN).
+* Zamiana małych na wielkie: `cat plik | tr 'a-z' 'A-Z'`
+* Usuwanie powielonych spacji (squeeze): `tr -s ' '`
+* Usuwanie konkretnego znaku: `tr -d '\n'` (usuwa znaki nowej linii).
+
+
+* **sed (Stream Editor)** – Potężne narzędzie do modyfikacji strumienia danych w oparciu o wyrażenia regularne.
+* Zastępowanie pierwszego wystąpienia w linii: `sed 's/stare/nowe/' plik`
+* Zastępowanie wszystkich wystąpień w linii (global): `sed 's/stare/nowe/g' plik`
+* Modyfikacja pliku w miejscu (inline): `sed -i 's/stare/nowe/g' plik` (nadpisuje plik źródłowy).
+
+
+* **cut** – Wycina konkretne pola z pliku tekstowego na podstawie delimitera (separatora).
+* `-d` – Określa separator.
+* `-f` – Określa numer kolumny (liczone od 1).
+* Przykład: `cut -d ':' -f 1 /etc/passwd` (Wyciąga same nazwy użytkowników).
+
+
+* **sort** – Sortuje linie alfabetycznie.
+* `-n` – Sortowanie numeryczne.
+* `-r` – Odwrócona kolejność (reverse).
+* `-t` – Definiuje separator kolumn.
+* `-kX` – Wskazuje kolumnę `X` do posortowania (np. `sort -t ':' -k3 -n /etc/passwd`).
+* `-u` – (Unique) Od razu sortuje i usuwa duplikaty. Działa jak połączenie `sort` i `uniq`.
+
+
+* **uniq** – Narzędzie do filtrowania i raportowania powtarzających się linii. **Ważne:** `uniq` analizuje tylko linie występujące bezpośrednio po sobie, dlatego przed jego użyciem plik niemal zawsze trzeba posortować!
+* Podstawowe usunięcie duplikatów: `sort plik.txt | uniq` (pozostawi tylko unikalne wpisy).
+* `-c` – (Count) Zlicza wystąpienia danej linii. Klasyczny trik administracyjny na sprawdzanie np. logów to: `sort plik.txt | uniq -c | sort -nr` (najpierw sortuje nazwy, potem `uniq` liczy ich wystąpienia, a na koniec drugi `sort` układa wynik malejąco po liczbie wystąpień).
+* `-d` – (Duplicate) Wyświetla **tylko** te linie, które się powtarzają.
+
+
+* **wc (Word Count)** – Zlicza metryki w pliku. Najczęściej używane: `-l` (linie), `-w` (słowa), `-c` (bajty/znaki).
+
+### Wyszukiwanie wewnątrz plików (grep)
+
+Narzędzie do wyłapywania linii pasujących do podanego wzorca. Domyślnie case-sensitive.
+
+* `-i` – Ignoruje wielkość liter.
+* `-v` – Odwraca dopasowanie (zwraca linie, które **nie zawierają** wzorca).
+* `-r` – Przeszukuje rekursywnie wszystkie pliki w podanym katalogu.
+* `-w` – Dopasowuje tylko całe słowa (np. szukając 'test', pominie słowo 'testowy').
+* `-e` – Pozwala zdefiniować wiele wzorców jednocześnie (logiczne OR): `grep -e 'root' -e 'admin' plik`.
+* `-A N` / `-B N` / `-C N` – Pokazuje `N` linii po (After), przed (Before) lub wokół (Context) znalezionego dopasowania.
+
+---
+
+# ROZDZIAŁ 5 - LOGOWANIE DO SYSTEMU
+
+**Terminale i powłoki:**
+Wirtualne terminale (TTY) otwierane skrótem `Alt+F1` do `F6`. Przełączanie ręczne komendą `chvt N`.
+
+* **Różnice między terminalami:** Z technicznego punktu widzenia terminale wirtualne od `tty1` do `tty6` są identyczne – korzystają z tego samego demona (historycznie `getty`/`mingetty`, obecnie `systemd-logind`) i mają dokładnie takie same uprawnienia (w tym dostęp do sieci). Różnice wynikały jedynie z przyjętych konwencji i celowej konfiguracji systemu:
+* Historycznie GUI (X11) było sztywno przypinane do `tty7`, co zostawiało konsole 1-6 czysto tekstowymi. (Obecnie Wayland/GDM często startuje na `tty1` lub `tty2`).
+* Konsole od `tty8` do `tty12` były często konfigurowane w `syslogu` do wypluwania logów systemowych na żywo (np. logi kernela leciały prosto na ekran `tty12`, aby admin mógł je widzieć bez logowania).
+* Każdy otwarty TTY jest całkowicie niezależną sesją logowania, pozwalającą na równoległą pracę na tej samej maszynie.
+
+
+* Jeśli GUI blokuje F1, używa się `Ctrl+Alt+F2` do `F6`.
+* `tty1-tty6` to fizyczne konsole. Wirtualne emulatory okienkowe korzystają z pseudo-terminali (np. `pts/0`).
+
+**SSH i transfer plików:**
+
+* Składnia: `ssh [OPCJE] USER@HOST`
+* Opcje `ssh`:
+* `-l` – Definiowanie użytkownika, jeśli nie użyto notacji `user@host`.
+* `-i` – Wskazuje lokalizację klucza prywatnego (domyślnie `~/.ssh/id_rsa`).
+* `-F` – Wskazuje własny plik konfiguracyjny SSH (domyślnie `~/.ssh/config` per user, ogólny `/etc/ssh/ssh_config`).
+* `-X` / `-Y` – X11 Forwarding (uruchamianie aplikacji GUI z serwera na stacji klienckiej). Serwer musi mieć w `/etc/ssh/sshd_config` ustawione `X11Forwarding yes`.
+* `-p` – Niestandardowy port.
+
+
+* Narzędzia powiązane:
+* `ssh-keygen` – Generuje parę kluczy szyfrujących (prywatny/publiczny).
+* `ssh-copy-id USER@HOST` – Wysyła i dopisuje klucz publiczny do pliku `~/.ssh/authorized_keys` na docelowym serwerze.
+
+
+* **scp (Secure Copy)** – Narzędzie do przesyłania plików po protokole SSH.
+* Wysyłanie do serwera: `scp /lokalny/plik.txt user@host:/tmp/`
+* Pobieranie z serwera: `scp user@host:/tmp/plik.txt /lokalny/folder/`
+* `-r` – Kopiowanie rekursywne całych katalogów.
+* `-P` – Wielkie 'P', definiuje port dla SSH.
+
+
+* Weryfikacja sesji:
+* `who` lub `w` – Pokazuje listę zalogowanych użytkowników i ich procesy.
+
+
+
+---
+
+# ROZDZIAŁ 6 - USER AND GROUP MANAGEMENT
+
+Root w systemie ma absolutny dostęp, omijający wszystkie restrykcje plików (ACL, standardowe uprawnienia). Nie ma konta root bez pełnych praw (wyjątek: polityki SELinux mogą go ograniczyć).
+
+### Informacje o kontach
+
+* `id [USER]` – Wyświetla numery UID, GID i przynależność do grup.
+* `getent database [KLUCZ]` – Wyciąga wpisy z systemowych baz danych, uwzględniając zewnętrzne źródła (np. LDAP/SSSD). `getent passwd testuser`.
+
+### Przełączanie tożsamości
+
+* `su` – Zamienia użytkownika.
+* Logowanie interaktywne bez pełnego środowiska (Interactive Shell): `su` (tylko ładuje `.bashrc`).
+* Pełne logowanie z inicjalizacją zmiennych środowiskowych (Login Shell): `su -` (ładuje `.bash_profile` i zachowuje się jak pełnoprawne zalogowanie).
+* Wykonanie pojedynczej komendy jako inny user: `su -c 'komenda' user`.
+
+
+
+### Modyfikacja użytkowników i grup
+
+* `useradd` – Tworzenie usera.
+* `-m` – Wymusza stworzenie katalogu domowego z plików źródłowych znajdujących się w `/etc/skel/`.
+* `-u` – Ręczne nadanie konkretnego UID.
+* `-G` – Dodanie do grup dodatkowych podczas tworzenia (np. `group1,group2`).
+
+
+* Domyślne wartości dla tworzonych kont pochodzą z:
+* `/etc/login.defs` (ustawienia wygasania, UID_MIN, polityki).
+* `/etc/default/useradd` (domyślny shell, katalog domowy, parametry tworzenia).
+
+
+* `usermod` – Modyfikacja istniejącego usera.
+* Zmiana powłoki: `-s /bin/bash`.
+* Dodanie do grupy: `-aG GRUPA USER` (OSTRZEŻENIE: brak flagi `-a` zresetuje grupy dodatkowe tylko do tej jednej określonej w poleceniu `-G`). Grupa `wheel` to na RHEL domyślna grupa administratorów `sudo`.
+* Blokowanie/odblokowywanie konta: `-L` (Lock) / `-U` (Unlock).
+* Zmiana komentarza (pola GECOS): `-c "komentarz"`.
+* Zmiana katalogu domowego (z migracją danych): `-d /nowy/home -m`.
+
+
+* `userdel` – Usunięcie usera. Dodanie `-r` wyczyści również jego katalog domowy oraz maile.
+* `groupadd` / `groupmod` – Zarządzanie grupami. Dodawanie użytkowników do grup zawsze realizuje się z poziomu komendy `usermod`. Flaga `-g` zmienia numer GID.
+* `groupmems -g GRUPA -l` – Wylistowanie wszystkich członków danej grupy.
+
+### Zarządzanie ważnością hasła i konta (chage i passwd)
+
+**1. Zmiana globalnych wartości domyślnych (dla nowych użytkowników):**
+Aby wszystkie nowo tworzone konta w systemie miały odgórnie narzuconą politykę haseł, należy wyedytować plik `/etc/login.defs`. Znajdują się tam kluczowe zmienne:
+
+* `PASS_MAX_DAYS 90` – Hasło wygasa po 90 dniach.
+* `PASS_MIN_DAYS 7` – Hasło nie może być zmienione częściej niż co 7 dni (zapobiega to omijaniu historii haseł przez natychmiastowe rotowanie).
+* `PASS_WARN_AGE 14` – System zacznie ostrzegać o wygasaniu hasła 14 dni przed czasem.
+* *Uwaga:* Zmiana w tym pliku nie zadziała wstecz – konta utworzone wcześniej zachowają swoje stare ustawienia zapisane w `/etc/shadow`.
+
+**2. Zarządzanie istniejącymi użytkownikami za pomocą `chage` i `passwd`:**
+
+* `passwd` – Zmiana hasła.
+* `-l` / `-u` – Lock/Unlock hasła (dopisuje `!!` do skrótu hasła w `/etc/shadow`).
+
+
+* `chage` (od Change Age) – Służy do modyfikowania polityki wygasania konkretnego konta.
+* `chage -l USER` – Wyświetla czytelne podsumowanie obecnych restrykcji dla konta (kiedy hasło zostało zmienione, kiedy wygasa, kiedy wygasa całe konto).
+* `chage -d 0 USER` – (Trik z zerowym dniem) Ustawia datę ostatniej zmiany hasła na początek epoki uniksowej (0), co wymusza na użytkowniku **natychmiastową zmianę hasła** przy najbliższym logowaniu.
+* `chage -M DNI USER` – Ustala, co ile dni (Max) hasło musi zostać zmienione (np. `chage -M 30 jkowalski` wymusi zmianę co miesiąc).
+* `chage -m DNI USER` – Ustala minimalny czas między zmianami.
+* `chage -W DNI USER` – Ustala czas ostrzegania (Warning) przed wygaśnięciem.
+* `chage -I DNI USER` – (Inactive) Ustawia "okres karencji". Jeśli hasło wygaśnie, konto nie jest od razu blokowane. Przez X dni użytkownik może jeszcze zalogować się z użyciem starego hasła *wyłącznie* po to, by je zmienić. Po tym czasie konto blokuje się na twardo.
+* `chage -E YYYY-MM-DD USER` – (Expire) Ustawia bezwzględną datę wygaśnięcia **całego konta** (nie tylko hasła). Świetne do zarządzania kontami tymczasowymi (np. `chage -E 2026-12-31 stazysta`). Zablokowanie konta w ten sposób wymaga interwencji admina (`chage -E -1` wyłącza to ograniczenie).
+
+
+
+### Pliki systemowe
+
+Używanie edytorów bezpośrednio do tych plików nie jest zalecane bez odpowiednich wrapperów ze względu na brak blokad zapisu i weryfikacji składni (można uszkodzić logowanie do systemu). Używamy `visudo` dla sudoers, `vipw` dla passwd/shadow, `vigr` dla group.
+
+* `/etc/passwd`: `username:password_placeholder:UID:GID:GECOS:home_dir:shell` (gdzie shell `/sbin/nologin` blokuje dostęp do interaktywnej konsoli i wyświetla zawartość `/etc/nologin.txt`).
+* `/etc/shadow`: `username:hash:ostatnia_zmiana:min_dni:max_dni:ostrzeżenie:okres_blokady:wygaśnięcie_konta:zarezerwowane`.
+* `/etc/group`: `grupa:hasło_grupy:GID:lista_użytkowników`.
+
+**Środowisko startowe powłoki:**
+
+* `/etc/profile` – Ustawienia globalne dla systemowych powłok logowania.
+* `/etc/bashrc` – Globalne aliasy i funkcje dla wszystkich powłok (w tym subshelli).
+* `~/.bash_profile` – Konfiguracja usera dla powłok logowania (np. własne `$PATH`).
+* `~/.bashrc` – Konfiguracja usera dla każdej nowo otwartej konsoli interaktywnej.
+
+---
+
+# Zarządzanie tożsamością i logowanie sieciowe (SSSD / LDAP / AD)
+
+Dawniej opierano się na instalowaniu klienta LDAP (np. daemon `nslcd`) i konfiguracji przez zdeprecjonowane polecenie `authconfig`. W nowoczesnych dystrybucjach (RHEL 8/9/10, CentOS) standardem jest **SSSD (System Security Services Daemon)**, a system uwierzytelniania konfiguruje się poprzez `authselect` lub `realmd`.
+
+### SSSD
+
+SSSD to demon działający jako pośrednik między lokalnym systemem operacyjnym a zdalnymi katalogami (Active Directory, FreeIPA, serwery LDAP).
+
+* **Do czego służy?** SSSD autoryzuje użytkowników z domeny sieciowej tak, jakby istnieli lokalnie.
+* **Zalety:** Obejmuje cache'owanie poświadczeń (pozwala na logowanie domenowe "offline", np. gdy laptop utraci łączność z serwerem AD), upraszcza zarządzanie w dużych infrastrukturach.
+* **Konfiguracja:** Znajduje się w pliku `/etc/sssd/sssd.conf`. Aby SSSD poprawnie działało, plik ten musi mieć restrykcyjne uprawnienia `chmod 600`.
+
+### Realmd
+
+Najpopularniejsze i najprostsze narzędzie (wymaga paczek `realmd` oraz `sssd`) do podpinania maszyny z systemem Linux pod usługę katalogową (AD / FreeIPA). `Realmd` pod spodem automatycznie generuje pliki dla SSSD i konfiguruje mechanizmy PAM.
+
+1. Sprawdzenie/wykrycie domeny:
+```bash
+realm discover AD_SERVER.DOMENA.LOCAL
+
+```
+
+
+2. Podpięcie do domeny (wymaga poświadczeń administratora usługi katalogowej):
+```bash
+realm join AD_SERVER.DOMENA.LOCAL -U Administrator
+
+```
+
+
+
+Po pomyślnym zintegrowaniu, można logować się zdalnie na serwer z użyciem tożsamości domenowej:
+`ssh user@domena.local@ADRES_IP_SERWERA` (zależnie od ustawienia parametru `use_fully_qualified_names` w `sssd.conf`).
+
+### Authselect (Zastępca authconfig)
+
+Narzędzie to (dostępne z pudełka w nowych wydaniach RHEL) służy do przełączania profili PAM i `nsswitch.conf`. Zamiast ręcznie edytować flagi, jak w starym `authconfig --enableldap`, w `authselect` wybiera się profil.
+Przykład wdrożenia uwierzytelniania SSSD po konfiguracji profilu na nowym RHEL:
+
+```bash
+authselect select sssd with-mkhomedir --force
+
+```
+
+Dodatek `with-mkhomedir` odpowiada dawnej opcji `--enablemkhomedir`, zapewniając automatyczne generowanie katalogów domowych z `/etc/skel` przy pierwszym zalogowaniu użytkownika domenowego, który w systemie lokalnym nie miał jeszcze przestrzeni.
+
+
+############################
 
 
 # ROZDZIAL 7 - CONFIGURATION PERMISSIONS
